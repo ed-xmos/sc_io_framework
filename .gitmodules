@@ -1,0 +1,9 @@
+[submodule "modules/fwk_io"]
+	path = modules/fwk_io
+	url = git@github.com:xmos/fwk_io.git
+[submodule "modules/fwk_core"]
+	path = modules/fwk_core
+	url = git@github.com:xmos/fwk_core.git
+[submodule "modules/lib_xua"]
+	path = modules/lib_xua
+	url = git@github.com:xmos/lib_xua.git
