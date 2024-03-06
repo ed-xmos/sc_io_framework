@@ -23,17 +23,33 @@
 
 // Pad control defines
 #define PAD_CONTROL     0x0006
+#define PULL_NONE       0x0
+#define PULL_UP_WEAK    0x1
+#define PULL_DOWN_WEAK  0x2
+#define BUS_KEEP_WEAK   0x3
+#define PULL_SHIFT      18
 #define DRIVE_2MA       0x0
 #define DRIVE_4MA       0x1
 #define DRIVE_8MA       0x2
 #define DRIVE_12MA      0x3
 #define DRIVE_SHIFT     20
-#define ENABLE_SCHMITT  (1 << 23)
+#define SLEW_SHIFT      22
+#define SCHMITT_SHIFT   23
 
-// Macro to adjust the pad output drive strength
-#define set_pad_drive_strength(port, strength)  {__asm__ __volatile__ ("setc res[%0], %1": : "r" (port) , "r" ((strength << DRIVE_SHIFT) | PAD_CONTROL));}
-// Macro to enable the schmitt input
-#define set_pad_input_schmitt(port)  {__asm__ __volatile__ ("setc res[%0], %1": : "r" (port) , "r" (ENABLE_SCHMITT | PAD_CONTROL));}
+
+// Drive control defines
+#define DRIVE_MODE                  0x0003
+#define DRIVE_BOTH                  0x0
+#define DRIVE_HIGH_WEAK_PULL_DOWN   0x1
+#define DRIVE_LOW_WEAK_PULL_UP      0x2
+
+// Macro to setup the port drive characteristics
+#define set_pad_properties(port, drive_strength, pull_config, slew, schmitt)  {__asm__ __volatile__ ("setc res[%0], %1": : "r" (port) , "r" ((drive_strength << DRIVE_SHIFT) | \
+                                                                                                                                            (pull_config << PULL_SHIFT) | \
+                                                                                                                                            ((slew ? 1 : 0) << SLEW_SHIFT) | \
+                                                                                                                                            ((schmitt ? 1 : 0) << SCHMITT_SHIFT) | \
+                                                                                                                                            PAD_CONTROL)) ;}
+
 
 
 // Macros to convert between two bytes and U16

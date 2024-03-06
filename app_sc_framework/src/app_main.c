@@ -12,15 +12,17 @@
 #include <print.h>
 
 #include "app_main.h"
+#include "adc_task.h"
 #include "i2s_wrapper.h"
-
 #include "xua_wrapper.h"
 #include "xua_conf.h"
 
 ///////// Tile main functions where we par off the threads ///////////
 
 void main_tile_0(chanend_t c_cross_tile[2]){
-
+    PAR_JOBS(
+        PJOB(adc_task, ())
+    );
 }
 
 void main_tile_1(chanend_t c_cross_tile[2]){

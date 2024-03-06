@@ -36,13 +36,13 @@ void i2s_send(void *app_data, size_t n, int32_t *send_data)
 {
     chanend_t c_xua = *((unsigned *)app_data);
     (void)c_xua;
-    printintln(1);
 }
 
 I2S_CALLBACK_ATTR
 void i2s_receive(void *app_data, size_t n, int32_t *receive_data)
 {
     chanend_t c_xua = *((unsigned *)app_data);
+    *receive_data = 0x10000000;
     xua_exchange(c_xua, receive_data);
 }
 
