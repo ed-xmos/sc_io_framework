@@ -4,7 +4,7 @@
 #pragma once
 
 #include "app_main.h"           // audio_frame_t
-#include "i2s_tdm_slave.h"
+#include "i2s.h"
 
 
 DECLARE_JOB(tdm16_slave, (audio_frame_t **));

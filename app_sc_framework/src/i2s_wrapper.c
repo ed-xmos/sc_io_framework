@@ -5,7 +5,7 @@
 #include <string.h>
 
 #include "app_main.h"
-#include "tdm_slave_wrapper.h"
+#include "i2s_wrapper.h"
 
 I2S_CALLBACK_ATTR
 void i2s_init(void *app_data, i2s_config_t *i2s_config)
@@ -55,7 +55,7 @@ i2s_restart_t i2s_restart_check(void *app_data)
 }
 
 
-void tdm16_slave(audio_frame_t **read_buffer_ptr) {
+void i2s_master(audio_frame_t **read_buffer_ptr) {
     printf("tdm16_slave\n");
 
     i2s_tdm_ctx_t ctx;

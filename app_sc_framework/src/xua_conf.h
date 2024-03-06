@@ -6,8 +6,8 @@
 #ifndef _XUA_CONF_H_ 
 #define _XUA_CONF_H_
 
-#define NUM_USB_CHAN_OUT 0
-#define NUM_USB_CHAN_IN 16
+#define NUM_USB_CHAN_OUT 4
+#define NUM_USB_CHAN_IN 4
 #define I2S_CHANS_DAC 0
 #define I2S_CHANS_ADC 0
 #define MCLK_441 (512 * 44100)
@@ -19,8 +19,8 @@
 
 #define VENDOR_STR "XMOS"
 #define VENDOR_ID 0x20B1
-#define PRODUCT_STR_A2 "Mic Aggregator"
-#define PRODUCT_STR_A1 "Mic Aggregator"
+#define PRODUCT_STR_A2 "SC Framework"
+#define PRODUCT_STR_A1 "SC Framework"
 #define PID_AUDIO_1 0x4003
 #define PID_AUDIO_2 0x4004
 #define AUDIO_CLASS 2

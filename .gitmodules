@@ -7,3 +7,6 @@
 [submodule "modules/lib_xua"]
 	path = modules/lib_xua
 	url = git@github.com:xmos/lib_xua.git
+[submodule "xmos_xmake_toolchain"]
+	path = xmos_xmake_toolchain
+	url = git@github.com:xmos/xmos_cmake_toolchain.git
