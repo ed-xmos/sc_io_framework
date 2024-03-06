@@ -10,3 +10,6 @@
 [submodule "xmos_xmake_toolchain"]
 	path = xmos_xmake_toolchain
 	url = git@github.com:xmos/xmos_cmake_toolchain.git
+[submodule "modules/lib_sw_pll"]
+	path = modules/lib_sw_pll
+	url = https://github.com/xmos/lib_sw_pll

@@ -27,8 +27,7 @@ void main_tile_1(chanend_t c_cross_tile[2]){
     channel_t c_aud = chan_alloc();
 
     PAR_JOBS(
-        // PJOB(tdm16_slave, (read_buffer_ptr)),
+        PJOB(i2s_wrapper, (c_aud.end_b)),
         PJOB(xua_wrapper, (c_aud.end_a)) // This spawns 4 tasks
-#endif
     );
 }

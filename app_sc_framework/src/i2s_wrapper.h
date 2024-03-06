@@ -1,11 +1,14 @@
-// Copyright 2023 XMOS LIMITED.
+// Copyright 2024 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 #pragma once
+
+#include <xcore/channel.h>
+#include <xcore/parallel.h>
 
 #include "app_main.h"           // audio_frame_t
 #include "i2s.h"
 
 
-DECLARE_JOB(tdm16_slave, (audio_frame_t **));
-void tdm16_slave(audio_frame_t **read_buffer);
+DECLARE_JOB(i2s_wrapper, (chanend_t));
+void i2s_wrapper(chanend_t c_xua);

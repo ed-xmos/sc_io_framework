@@ -5,84 +5,68 @@
 #include <string.h>
 
 #include "app_main.h"
+#include "xua_conf.h"
 #include "i2s_wrapper.h"
+
+
+port_t p_mclk  = PORT_MCLK_IN;
+port_t p_bclk = PORT_I2S_BCLK;
+port_t p_lrclk = PORT_I2S_LRCLK;
+
+port_t p_din [NUM_IN] = {PORT_I2S_ADC_DATA};
+port_t p_dout[NUM_OUT] = {PORT_I2S_DAC_DATA};
+
+xclock_t clk_bclk = XS1_CLKBLK_1;
 
 I2S_CALLBACK_ATTR
 void i2s_init(void *app_data, i2s_config_t *i2s_config)
 {
     printf("i2s_init\n");
 
+    i2s_config->mclk_bclk_ratio = MCLK_48 / (MIN_FREQ * 32);
+    i2s_config->mode = I2S_MODE_I2S;
+
     (void) app_data;
-    (void) i2s_config;
-
-}
-
-TDM_CALLBACK_ATTR
-void tdm_post_port_init(void *ctx)
-{
-    printf("tdm_post_port_init\n");
-    i2s_tdm_ctx_t *i2s_tdm_ctx = ctx;
-
-    for(int i = 0; i < i2s_tdm_ctx->num_out; i++){
-        set_pad_drive_strength(i2s_tdm_ctx->p_dout[i], DRIVE_8MA);
-    }
-
-    if(i2s_tdm_ctx->fysnch_error == true){
-        printf("fysnch_error seen!!\n");
-    }
 }
 
 I2S_CALLBACK_ATTR
 void i2s_send(void *app_data, size_t n, int32_t *send_data)
 {
-    audio_frame_t **read_buffer_ptr = (audio_frame_t **)app_data;
-    audio_frame_t *read_buffer = *read_buffer_ptr; // Make copy just in case mics move on buffer halfway through frame
 
-    if(read_buffer != NULL){
-        // for(int ch = 0; ch < 16; ch++){
-        //     send_data[ch] = read_buffer->data[ch][0];
-        // }
-        memcpy(send_data, &read_buffer->data[0][0], 16 * sizeof(*send_data)); // We can do this because samples are contiguous in memory for framesize == 1
-    } else {
-        memset(send_data, 0, 16 * sizeof(*send_data));
-    }
 }
 
 I2S_CALLBACK_ATTR
+void i2s_receive(void *app_data, size_t n, int32_t *receive_data)
+{
+
+}
+I2S_CALLBACK_ATTR
+
 i2s_restart_t i2s_restart_check(void *app_data)
 {
     return I2S_NO_RESTART;
 }
 
 
-void i2s_master(audio_frame_t **read_buffer_ptr) {
-    printf("tdm16_slave\n");
+void i2s_wrapper(chanend_t c_xua) {
+    printf("i2s_master\n");
 
-    i2s_tdm_ctx_t ctx;
     i2s_callback_group_t i_i2s = {
             .init = (i2s_init_t) i2s_init,
             .restart_check = (i2s_restart_check_t) i2s_restart_check,
-            .receive = NULL,
+            .receive = (i2s_receive_t) i2s_receive,
             .send = (i2s_send_t) i2s_send,
-            .app_data = (void*)read_buffer_ptr,
+            .app_data = NULL,
     };
 
-    port_t p_bclk = TDM_SLAVEPORT_BCLK;
-    port_t p_fsync = TDM_SLAVEPORT_FSYNCH;
-    port_t p_dout = TDM_SLAVEPORT_OUT;
-
-    xclock_t bclk = TDM_SLAVEPORT_CLK_BLK;
-
-    i2s_tdm_slave_tx_16_init(
-        &ctx,
-        &i_i2s,
-        p_dout,
-        p_fsync,
-        p_bclk,
-        bclk,
-        TDM_SLAVETX_OFFSET,
-        TDM_SLAVESAMPLE_MODE,
-        tdm_post_port_init);
-
-    i2s_tdm_slave_tx_16_thread(&ctx);
+    i2s_master(
+            &i_i2s,
+            p_dout,
+            NUM_OUT,
+            p_din,
+            NUM_IN,
+            p_bclk,
+            p_lrclk,
+            p_mclk,
+            clk_bclk);
 }

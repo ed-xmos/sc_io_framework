@@ -1,7 +1,8 @@
 # This file picks the sources and adds include files for the USB version of mic_aggregator
 # Note lib_xua is not currently a cmake supported lib so this file works around that
 
-set(XUA_SRC_PATH ${CMAKE_CURRENT_LIST_DIR}/../../modules/xua/lib_xua)
+set(XUA_SRC_PATH ${CMAKE_CURRENT_LIST_DIR}/../modules/lib_xua/lib_xua)
+set(SW_PLL_SRC_PATH ${CMAKE_CURRENT_LIST_DIR}/../modules/lib_sw_pll/lib_sw_pll)
 
 file(GLOB_RECURSE XUA_SOURCES       ${XUA_SRC_PATH}/src/core/buffer/*.xc
                                     ${XUA_SRC_PATH}/src/core/buffer/*.c
@@ -11,6 +12,7 @@ file(GLOB_RECURSE XUA_SOURCES       ${XUA_SRC_PATH}/src/core/buffer/*.xc
                                     ${XUA_SRC_PATH}/src/core/support/*.xc
                                     ${XUA_SRC_PATH}/src/dfu/*.c
                                     ${XUA_SRC_PATH}/src/dfu/*.xc
+                                    # ${SW_PLL_SRC_PATH}/api
 )
 
 set(XUA_INCLUDES                    ${XUA_SRC_PATH}/api
@@ -22,4 +24,6 @@ set(XUA_INCLUDES                    ${XUA_SRC_PATH}/api
                                     ${XUA_SRC_PATH}/src/core/user/audiostream
                                     ${XUA_SRC_PATH}/src/core/user/hostactive
                                     ${XUA_SRC_PATH}/src/hid
+                                    ${XUA_SRC_PATH}/src/core/clocking
+                                    # ${SW_PLL_SRC_PATH}/src
 )

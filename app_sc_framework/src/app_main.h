@@ -6,11 +6,6 @@
 #include <stdint.h>
 #include "app_config.h"
 
-#define NUM_AUDIO_BUFFERS   3
-
-typedef struct audio_frame_t{
-    int32_t data[MIC_ARRAY_CONFIG_MIC_COUNT][MIC_ARRAY_CONFIG_SAMPLES_PER_FRAME];
-} audio_frame_t;
 
 // Macro to adjust input pad timing for the round trip delay. Supports 0 (default) to 5 core clock cycles.
 // Larger numbers increase hold time but reduce setup time.
