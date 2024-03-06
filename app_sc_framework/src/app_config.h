@@ -5,7 +5,7 @@
 
 #pragma once
 
-#define USB_MCLK_COUNT_CLK_BLK  XS1_PORT_32A
+#define USB_MCLK_COUNT_CLK_BLK  XS1_CLKBLK_1
 
 #define NUM_OUT     1
 #define NUM_IN      1

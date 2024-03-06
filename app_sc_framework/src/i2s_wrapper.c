@@ -7,6 +7,8 @@
 #include "app_main.h"
 #include "xua_conf.h"
 #include "i2s_wrapper.h"
+#include "xua_wrapper.h"
+#include "sw_pll.h"
 
 
 port_t p_mclk  = PORT_MCLK_IN;
@@ -32,16 +34,19 @@ void i2s_init(void *app_data, i2s_config_t *i2s_config)
 I2S_CALLBACK_ATTR
 void i2s_send(void *app_data, size_t n, int32_t *send_data)
 {
-
+    chanend_t c_xua = *((unsigned *)app_data);
+    (void)c_xua;
+    printintln(1);
 }
 
 I2S_CALLBACK_ATTR
 void i2s_receive(void *app_data, size_t n, int32_t *receive_data)
 {
-
+    chanend_t c_xua = *((unsigned *)app_data);
+    xua_exchange(c_xua, receive_data);
 }
-I2S_CALLBACK_ATTR
 
+I2S_CALLBACK_ATTR
 i2s_restart_t i2s_restart_check(void *app_data)
 {
     return I2S_NO_RESTART;
@@ -49,16 +54,17 @@ i2s_restart_t i2s_restart_check(void *app_data)
 
 
 void i2s_wrapper(chanend_t c_xua) {
-    printf("i2s_master\n");
+    sw_pll_fixed_clock(MCLK_48);
 
     i2s_callback_group_t i_i2s = {
             .init = (i2s_init_t) i2s_init,
             .restart_check = (i2s_restart_check_t) i2s_restart_check,
             .receive = (i2s_receive_t) i2s_receive,
             .send = (i2s_send_t) i2s_send,
-            .app_data = NULL,
+            .app_data = &c_xua,
     };
 
+    printf("i2s_master\n");
     i2s_master(
             &i_i2s,
             p_dout,
