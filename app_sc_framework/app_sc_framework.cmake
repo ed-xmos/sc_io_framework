@@ -50,7 +50,7 @@ set(APP_COMPILE_DEFINITIONS
     DEBUG_PRINT_ENABLE=1
     __xua_conf_h_exists__=1
     XUD_SERIES_SUPPORT=4
-    USB_TILE=tile[1]
+    USB_TILE=tile[0]
     XUD_CORE_CLOCK=600
 )
 
