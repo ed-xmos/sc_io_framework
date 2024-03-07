@@ -13,3 +13,6 @@
 [submodule "modules/lib_sw_pll"]
 	path = modules/lib_sw_pll
 	url = https://github.com/xmos/lib_sw_pll
+[submodule "modules/lib_neopixel"]
+	path = modules/lib_neopixel
+	url = git@github.com:xmos/lib_neopixel.git
