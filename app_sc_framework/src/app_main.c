@@ -27,24 +27,23 @@ void aic3204_board_init();
 
 void main_tile_0(chanend_t c_cross_tile[2]){
 
-    delay_milliseconds(1);
+    delay_milliseconds(1); // Wait for aic3204_codec_reset
 
     sw_pll_fixed_clock(MCLK_48);
     aic3204_board_init();
 
     PAR_JOBS(
         PJOB(adc_task, ()),
-        PJOB(control_task, ())
+        PJOB(control_task, ()),
+        PJOB(xua_wrapper, (c_cross_tile[0])) // This spawns 4 tasks
     );
 }
 
 void main_tile_1(chanend_t c_cross_tile[2]){
-    channel_t c_aud = chan_alloc();
 
     aic3204_codec_reset();
 
     PAR_JOBS(
-        PJOB(i2s_wrapper, (c_aud.end_b)),
-        PJOB(xua_wrapper, (c_aud.end_a)) // This spawns 4 tasks
+        PJOB(i2s_wrapper, (c_cross_tile[0]))
     );
 }
