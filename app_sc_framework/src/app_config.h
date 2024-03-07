@@ -5,7 +5,7 @@
 
 #pragma once
 
-#define USB_MCLK_COUNT_CLK_BLK  XS1_CLKBLK_1
+#define USB_MCLK_COUNT_CLK_BLK  XS1_CLKBLK_2
 
-#define NUM_OUT     1
-#define NUM_IN      1
+#define I2S_NUM_LINES_OUT     1
+#define I2S_NUM_LINES_IN      1

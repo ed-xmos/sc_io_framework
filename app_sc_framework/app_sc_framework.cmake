@@ -3,13 +3,16 @@
 #**********************
 
 set(APP_SRC_PATH ${CMAKE_CURRENT_LIST_DIR}/src)
-set(MIC_ARRAY_DEMO_PATH ${CMAKE_CURRENT_LIST_DIR}/../../modules/io/modules/mic_array/demos/)
 set(PLATFORM_FILE ${APP_SRC_PATH}/XCORE-AI-EXPLORER.xn)
+set(CODEC_SETUP_PATH ${CMAKE_CURRENT_LIST_DIR}/../modules/fwk_io/modules/mic_array/demos/common/src/aic3204)
+set(CODEC_SETUP_PATH2 ${CMAKE_CURRENT_LIST_DIR}/../modules/fwk_io/modules/mic_array/demos/common/src)
 
 file(GLOB APP_SOURCES               ${APP_SRC_PATH}/*.c
                                     ${APP_SRC_PATH}/*.xc
                                     ${APP_SRC_PATH}/*.cpp
                                     ${APP_SRC_PATH}/config.xscope
+                                    ${CODEC_SETUP_PATH}/*.c
+                                    ${CODEC_SETUP_PATH2}/dac_port.c
 )
 
 # Add files for USB build config
@@ -35,6 +38,8 @@ set(APP_COMPILER_FLAGS
 set( APP_INCLUDES
     ${APP_SRC_PATH}
     ${XUA_INCLUDES}
+    ${CODEC_SETUP_PATH}
+    ${CODEC_SETUP_PATH2}
 )
 
 set(APP_COMPILE_DEFINITIONS
@@ -60,6 +65,8 @@ set(APP_COMMON_LINK_LIBRARIES
     lib_sw_pll
 )
 
+
+message(STATUS ${APP_INCLUDES})
 
 #*************************
 # Create Targets

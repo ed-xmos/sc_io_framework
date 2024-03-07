@@ -108,26 +108,34 @@ void xua_wrapper(chanend_t c_aud) {
 }
 
 /* This function mirrors the API of XUA_Buffer and exchanges samples with USB */
-void xua_exchange(chanend_t c_aud, int32_t samples[NUM_USB_CHAN_IN]){
+void xua_exchange(chanend_t c_aud, int32_t samples_out[NUM_USB_CHAN_OUT], int32_t samples_in[NUM_USB_CHAN_IN]){
     chanend_out_word(c_aud, 0);
     int isct = chanend_test_control_token_next_byte(c_aud);
     if(isct){
         char ct = chanend_in_control_token(c_aud);
         if(ct == SET_SAMPLE_FREQ)
         {
-            chanend_in_word(c_aud); /* Consume sample rate - always one frequency in this app */
+            unsigned sample_rate = chanend_in_word(c_aud); /* Consume sample rate - always one frequency in this app */
+            printintln(sample_rate);
         }
+        else if(ct == SET_STREAM_FORMAT_OUT)
+        {
+            chanend_in_word(c_aud); // dsdMode
+            chanend_in_word(c_aud); // sampRes
+        }
+        chanend_out_control_token(c_aud, XS1_CT_END);
+
         return;
     }
 
     const unsigned loops = (NUM_USB_CHAN_OUT > 0) ? NUM_USB_CHAN_OUT : 1; 
     for(int i = 0; i < loops; i++)
     {
-        chanend_in_word(c_aud); /* Consume USB output samples - none in this app */
+        samples_out[i] = chanend_in_word(c_aud);
     }
 
     for(int i = 0; i < NUM_USB_CHAN_IN; i++)
     {
-        chanend_out_word(c_aud, samples[i]);
+        chanend_out_word(c_aud, samples_in[i]);
     }
 }

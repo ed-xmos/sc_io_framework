@@ -11,4 +11,4 @@
 DECLARE_JOB(xua_wrapper, (chanend_t));
 void xua_wrapper(chanend_t c_aud);
 
-void xua_exchange(chanend_t c_aud, int32_t samples[NUM_USB_CHAN_IN]);
+void xua_exchange(chanend_t c_aud, int32_t samples_out[NUM_USB_CHAN_OUT], int32_t samples_in[NUM_USB_CHAN_IN]);
