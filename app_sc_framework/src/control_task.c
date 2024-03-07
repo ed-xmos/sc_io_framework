@@ -10,14 +10,14 @@
 void control_task(void){
     printstrln("control_task");
 
-    port_enable(WIFI_WIRQ);
-    port_out(WIFI_WIRQ, 1); // Drive 3.3V to this pin
-    set_pad_properties(WIFI_WIRQ, DRIVE_12MA, PULL_NONE, 0, 0);
+    port_enable(XS1_PORT_4F);
+    port_out(XS1_PORT_4F, 0xf); // Drive 3.3V to these pins & disable WiFi chip
+    set_pad_properties(XS1_PORT_4F, DRIVE_12MA, PULL_NONE, 0, 0);
 
 
     xclock_t cb = XS1_CLKBLK_3;
     clock_enable(cb);
-    port_t p_neopixel = WIFI_MOSI;
+    port_t p_neopixel = WIFI_MISO;
     port_enable(p_neopixel);
     port_start_buffered(p_neopixel, 32);
     neopixel_state state;
