@@ -10,5 +10,5 @@
 #include "i2s.h"
 
 
-DECLARE_JOB(i2s_wrapper, (chanend_t));
-void i2s_wrapper(chanend_t c_xua);
+DECLARE_JOB(i2s_wrapper, (chanend_t, chanend_t, chanend_t));
+void i2s_wrapper(chanend_t c_xua, chanend_t c_dsp_0, chanend_t c_dsp_1);

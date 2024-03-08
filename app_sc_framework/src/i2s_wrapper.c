@@ -8,6 +8,7 @@
 #include "xua_conf.h"
 #include "i2s_wrapper.h"
 #include "xua_wrapper.h"
+#include "dsp_wrapper.h"
 
 #include <math.h>
 
@@ -26,6 +27,8 @@ typedef struct i2s_cb_t{
     chanend_t c_xua;
     int32_t samples_in[NUM_USB_CHAN_IN];
     int32_t samples_out[NUM_USB_CHAN_OUT];
+    chanend_t c_dsp_0;
+    chanend_t c_dsp_1;
 }i2s_cb_t;
 
 I2S_CALLBACK_ATTR
@@ -65,17 +68,20 @@ i2s_restart_t i2s_restart_check(void *app_data)
     i2s_cb_t *i2s_cb_args = app_data;
 
     xua_exchange(i2s_cb_args->c_xua, i2s_cb_args->samples_out, i2s_cb_args->samples_in);
+    dsp_tile_0_exchange(i2s_cb_args->c_dsp_0, i2s_cb_args->samples_out, NUM_USB_CHAN_OUT);
 
     return I2S_NO_RESTART;
 }
 
 
-void i2s_wrapper(chanend_t c_xua) {
+void i2s_wrapper(chanend_t c_xua, chanend_t c_dsp_0, chanend_t c_dsp_1) {
 
     i2s_cb_t i2s_cb_args = {
         .c_xua = c_xua,
         .samples_in = {0},
-        .samples_out = {0}
+        .samples_out = {0},
+        .c_dsp_0 = c_dsp_0,
+        .c_dsp_1 = c_dsp_1
     };
 
 

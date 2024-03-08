@@ -4,11 +4,11 @@
 #include <platform.h>
 #include <xs1.h>
 
-extern void main_tile_0(chanend c_cross_tile[2]);
-extern void main_tile_1(chanend c_cross_tile[2]);
+extern void main_tile_0(chanend c_cross_tile[3]);
+extern void main_tile_1(chanend c_cross_tile[3]);
 
 int main() {
-    chan c_cross_tile[2];
+    chan c_cross_tile[3];
 
     /* 'Par' statement to run the following tasks in parallel */
     par
