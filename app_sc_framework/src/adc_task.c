@@ -12,7 +12,7 @@
 
 #include "app_main.h"
 
-#define ADC_READ_INTERVAL       (1 * XS1_TIMER_KHZ)   // Time in between individual conversions
+#define ADC_READ_INTERVAL       (1 * XS1_TIMER_KHZ)    // Time in between individual conversions 1ms with 10nf / 10k is practical minimum
 #define ADC_BITS_TARGET         10                     // Resolution for conversion. 10 bits is practical maximum 
 #define RESULT_HISTORY_DEPTH    32                     // For filtering raw conversion values
 
@@ -94,11 +94,12 @@ void adc_task(void){
     const int resistor_ohms_max = 9500; // nominal minimum value
 
     const int charge_resistance_max = resistor_ohms_max / num_ports;
-    const int rc_times_to_charge_fully = 20;
+    const int rc_times_to_charge_fully = 10; // 5 should be sufficient but slightly better crosstalk from 10
     const int max_charge_period_ticks = (rc_times_to_charge_fully * capacitor_nf * charge_resistance_max) / 10;
 
     const int max_discharge_period_ticks = (capacitor_nf * resistor_ohms_max) / 10;
-    xassert(ADC_READ_INTERVAL > 2 * max_discharge_period_ticks); // *2 to allow post processing time
+    xassert(ADC_READ_INTERVAL > max_charge_period_ticks + max_discharge_period_ticks * 2); // Ensure conversion rate is low enough. *2 to allow post processing time
+    printintln(ADC_READ_INTERVAL); printintln(max_charge_period_ticks +max_discharge_period_ticks);
 
     // Calaculate zero offset based on drive strength
     int zero_offset_ticks = 0;
@@ -125,7 +126,6 @@ void adc_task(void){
 
     for(unsigned i = 0; i < num_ports; i++){
         max_offsetted_conversion_time[i] = (resistor_ohms_max * capacitor_nf * 100) / 1035; // Calibration factor of / 10.35
-        printintln(max_offsetted_conversion_time[i]);
 
         port_enable(p_adc[i]);
         set_pad_properties(p_adc[i], port_drive, PULL_NONE, 0, 0);
@@ -191,8 +191,9 @@ void adc_task(void){
             adc_read:
             {
                 int discharge_end_time = hwtimer_get_time(t_adc);
-                int discharge_elapsed_time = discharge_end_time - discharge_start_time ;
+                int discharge_elapsed_time = discharge_end_time - discharge_start_time;
                 port_clear_trigger_in(p_adc[p_adc_idx_other]);
+                port_in(p_adc[p_adc_idx]); // Terminate discharge. No point in fully discharging cap.
 
                 results[p_adc_idx] = post_process_result(discharge_elapsed_time,
                                                         &zero_offset_ticks,
