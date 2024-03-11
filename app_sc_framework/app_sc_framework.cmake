@@ -67,6 +67,7 @@ set(APP_COMMON_LINK_LIBRARIES
     lib_mic_array
     lib_xud
     lib_sw_pll
+    lib_uart
 )
 
 

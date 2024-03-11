@@ -116,6 +116,7 @@ void xua_exchange(chanend_t c_aud, int32_t samples_out[NUM_USB_CHAN_OUT], int32_
         if(ct == SET_SAMPLE_FREQ)
         {
             unsigned sample_rate = chanend_in_word(c_aud); /* Consume sample rate - always one frequency in this app */
+            (void) sample_rate;
         }
         else if(ct == SET_STREAM_FORMAT_OUT)
         {

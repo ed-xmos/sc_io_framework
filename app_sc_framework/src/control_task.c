@@ -2,12 +2,14 @@
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 #include <print.h>
 #include <stdio.h>
+#include <xcore/interrupt_wrappers.h>
 
 #include "app_main.h"
 #include "i2c.h"
 #include "control_task.h"
 #include "adc_task.h"
 #include "neopixel.h"
+#include "uart.h"
 
 #define VU_GREEN    0x000010
 #define VU_RED      0x001000
@@ -43,6 +45,7 @@ void control_task(chanend_t c_uart, chanend_t c_adc, control_input_t *control_in
     port_out(XS1_PORT_4F, 0xf); // Drive 3.3V to these pins & disable WiFi chip
     set_pad_properties(XS1_PORT_4F, DRIVE_12MA, PULL_NONE, 0, 0);
 
+    // Neopixel setup
     xclock_t cb = XS1_CLKBLK_3;
     clock_enable(cb);
     port_t p_neopixel = WIFI_MISO;
@@ -54,6 +57,10 @@ void control_task(chanend_t c_uart, chanend_t c_adc, control_input_t *control_in
     hwtimer_realloc_xc_timer();
     neopixel_init(&np_state, length, p_neopixel, cb, 3);
 
+    // UART data
+    const uint8_t msg[] = "Hello world!\n";
+    unsigned msg_idx = 0;
+
     chan_out_word(c_adc, ADC_CMD_CAL_MODE_START);
 
     while(1){
@@ -63,6 +70,7 @@ void control_task(chanend_t c_uart, chanend_t c_adc, control_input_t *control_in
         unsigned adc0 = chan_in_word(c_adc);
         printuintln(adc0);
 
+        // Read buttons
         unsigned pb = port_in(p_buttons);
         if((pb & 0x1) == 0){ // Button 0
             chan_out_word(c_adc, ADC_CMD_CAL_MODE_START);
@@ -71,12 +79,36 @@ void control_task(chanend_t c_uart, chanend_t c_adc, control_input_t *control_in
             chan_out_word(c_adc, ADC_CMD_CAL_MODE_FINISH);
         }
 
+        // Send a character to the UART
+        chan_out_byte(c_uart, msg[msg_idx]);
+        if(++msg_idx == strlen((char*)msg)){
+            msg_idx = 0;
+        }
+
         delay_milliseconds(100);
     }
 }
 
+HIL_UART_TX_CALLBACK_ATTR
+void tx_fifo_empty(void *app_data){
+    // Do nothing
+}
 
-void uart_task(chanend_t c_uart){
+DEFINE_INTERRUPT_PERMITTED(UART_TX_INTERRUPTABLE_FUNCTIONS, void, uart_task, chanend_t c_uart){
     printstrln("uart_task");
 
+    port_t p_uart_tx = XS1_PORT_4B; // Bit 2 X1D06
+    hwtimer_t tmr = hwtimer_alloc();
+    const unsigned uart_buff_size = 64;
+
+    uint8_t buffer[uart_buff_size + 1] = {0};
+    uart_tx_t uart;
+    uart_tx_init(&uart, p_uart_tx, 115200, 8, UART_PARITY_NONE, 1, tmr, buffer, sizeof(buffer), tx_fifo_empty, &uart);
+    uart.tx_port_high_val = (1 << 2); // Use bit 2 for signalling
+
+    while(1){
+        // Wait on channel for next char
+        uint8_t tx_data = chan_in_byte(c_uart);
+        uart_tx(&uart, tx_data);
+    }
 }
