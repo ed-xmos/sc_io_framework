@@ -15,6 +15,7 @@
 #define ADC_READ_INTERVAL       (1 * XS1_TIMER_KHZ)    // Time in between individual conversions 1ms with 10nf / 10k is practical minimum
 #define ADC_BITS_TARGET         10                     // Resolution for conversion. 10 bits is practical maximum 
 #define RESULT_HISTORY_DEPTH    32                     // For filtering raw conversion values
+#define RESULT_HYSTERESIS       2
 
 
 static enum adc_state{
@@ -28,11 +29,12 @@ static inline int post_process_result(  int discharge_elapsed_time,
                                         int *zero_offset_ticks,
                                         int max_offsetted_conversion_time[],
                                         int *conversion_history,
+                                        int *hysteris_tracker,
                                         unsigned adc_idx,
                                         unsigned num_ports){
     const int max_result_scale = (1 << ADC_BITS_TARGET) - 1;
 
-    // Apply filter. First write to history
+    // Apply filter. First populate filter history.
     static unsigned filter_write_idx = 0;
     static unsigned filter_stable = 0;
     unsigned offset = adc_idx * RESULT_HISTORY_DEPTH + filter_write_idx;
@@ -55,26 +57,34 @@ static inline int post_process_result(  int discharge_elapsed_time,
     // Remove zero offset and clip
     int zero_offsetted_ticks = filtered_elapsed_time - *zero_offset_ticks;
     if(zero_offsetted_ticks < 0){
-        // printstr("clip negative: "); printintln(zero_offsetted_ticks);
         if(filter_stable){
-            *zero_offset_ticks += (zero_offsetted_ticks / 2); // Move zero offset halfway to compensate
+            // *zero_offset_ticks += (zero_offsetted_ticks / 2); // Move zero offset halfway to compensate gradually
         }
         zero_offsetted_ticks = 0;
     }
 
     // Calculate scaled output
-    int pc_scaled_result = (max_result_scale * zero_offsetted_ticks) / max_offsetted_conversion_time[adc_idx];
+    int scaled_result = (max_result_scale * zero_offsetted_ticks) / max_offsetted_conversion_time[adc_idx];
 
     // Clip positive and move max if needed
-    if(pc_scaled_result > max_result_scale){
+    if(scaled_result > max_result_scale){
         // Handle moving up the maximum val
-        int new_max_offsetted_conversion_time = (max_result_scale * zero_offsetted_ticks) / pc_scaled_result;
-        // printstr("clip positive: "); printintln(max_offsetted_conversion_time[adc_idx]); printintln(new_max_offsetted_conversion_time);
-        max_offsetted_conversion_time[adc_idx] += (new_max_offsetted_conversion_time - max_offsetted_conversion_time[adc_idx]) / 2; // Move max halfway to compensate
-        pc_scaled_result = max_result_scale;
+        int new_max_offsetted_conversion_time = (max_result_scale * zero_offsetted_ticks) / scaled_result;
+        max_offsetted_conversion_time[adc_idx] += (new_max_offsetted_conversion_time - max_offsetted_conversion_time[adc_idx]) / 2; // Move max halfway to compensate gradually
+        scaled_result = max_result_scale;
     }
 
-    return pc_scaled_result;
+    // Apply hysteresis
+    if(scaled_result > hysteris_tracker[adc_idx] + RESULT_HYSTERESIS || scaled_result == max_result_scale){
+        hysteris_tracker[adc_idx] = scaled_result;
+    }
+    if(scaled_result < hysteris_tracker[adc_idx] - RESULT_HYSTERESIS || scaled_result == 0){
+        hysteris_tracker[adc_idx] = scaled_result;
+    }
+
+    scaled_result = hysteris_tracker[adc_idx];
+
+    return scaled_result;
 }
 
 void adc_task(void){
@@ -85,13 +95,12 @@ void adc_task(void){
     unsigned p_adc_idx = 0;
     const unsigned num_ports = sizeof(p_adc) / sizeof(port_t);
 
-    int conversion_history[num_ports][RESULT_HISTORY_DEPTH] = {{0}};
-
     unsigned results[num_ports] = {0}; // The ADC read values scaled to max_result_scale
 
     const int port_drive = DRIVE_8MA;
     const int capacitor_nf = 10;
-    const int resistor_ohms_max = 9500; // nominal minimum value
+    const int resistor_ohms_max = 10500; // nominal maximum value
+    const int resistor_ohms_min = 9500; // nominal minimum value
 
     const int charge_resistance_max = resistor_ohms_max / num_ports;
     const int rc_times_to_charge_fully = 10; // 5 should be sufficient but slightly better crosstalk from 10
@@ -122,10 +131,15 @@ void adc_task(void){
         break;
     }
 
+    // For filter
+    int conversion_history[num_ports][RESULT_HISTORY_DEPTH] = {{0}};
+    int hysteris_tracker[num_ports] = {0};
+
     int max_offsetted_conversion_time[num_ports] = {0};
 
+    // Initialise all ports and apply estimated max conversion
     for(unsigned i = 0; i < num_ports; i++){
-        max_offsetted_conversion_time[i] = (resistor_ohms_max * capacitor_nf * 100) / 1035; // Calibration factor of / 10.35
+        max_offsetted_conversion_time[i] = (resistor_ohms_min * capacitor_nf * 100) / 1035; // Calibration factor of / 10.35
 
         port_enable(p_adc[i]);
         set_pad_properties(p_adc[i], port_drive, PULL_NONE, 0, 0);
@@ -199,6 +213,7 @@ void adc_task(void){
                                                         &zero_offset_ticks,
                                                         max_offsetted_conversion_time,
                                                         (int*)conversion_history,
+                                                        hysteris_tracker,
                                                         p_adc_idx,
                                                         num_ports);
 
