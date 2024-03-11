@@ -24,8 +24,8 @@ on tile[1]: buffered out port:32 p_i2s_dac[]    = {PORT_I2S_DAC_DATA};   /* I2S 
 on tile[1]: buffered in port:32 p_i2s_adc[]     = {PORT_I2S_ADC_DATA};   /* I2S Data-line(s) */
 on tile[1]: buffered out port:32 p_lrclk        = PORT_I2S_LRCLK;    /* I2S Bit-clock */
 on tile[1]: buffered out port:32 p_bclk         = PORT_I2S_BCLK;     /* I2S L/R-clock */
-on tile[1]: clock clk_audio_mclk                = XS1_CLKBLK_3;
-on tile[1]: clock clk_audio_bclk                = XS1_CLKBLK_4;
+on tile[1]: clock clk_audio_mclk                = XS1_CLKBLK_1;
+on tile[1]: clock clk_audio_bclk                = XS1_CLKBLK_2;
 on tile[1]: port p_mclk_in                      = PORT_MCLK_IN;
 
 
