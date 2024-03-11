@@ -5,3 +5,4 @@
 
 // #define assert(a) xassert(a)
 #define assert(...)
+#define xassert(...)

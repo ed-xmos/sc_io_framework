@@ -7,5 +7,3 @@
 
 #define USB_MCLK_COUNT_CLK_BLK  XS1_CLKBLK_2
 
-#define I2S_NUM_LINES_OUT     1
-#define I2S_NUM_LINES_IN      1

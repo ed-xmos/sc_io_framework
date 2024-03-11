@@ -8,8 +8,8 @@
 
 #define NUM_USB_CHAN_OUT 2
 #define NUM_USB_CHAN_IN 2
-#define I2S_CHANS_DAC 0
-#define I2S_CHANS_ADC 0
+#define I2S_CHANS_DAC 2
+#define I2S_CHANS_ADC 2
 #define MCLK_441 (256 * 44100)
 #define MCLK_48 (256 * 48000)
 #define MIN_FREQ 48000
@@ -28,7 +28,7 @@
 #define AUDIO_CLASS_FALLBACK 0
 #define BCD_DEVICE 0x1234
 #define XUA_DFU_EN 0
-#define CODEC_MASTER 1 
+#define CODEC_MASTER 0
 #define INPUT_VOLUME_CONTROL 1
 
 #endif

@@ -66,6 +66,7 @@ void control_task(chanend_t c_uart, chanend_t c_adc, control_input_t *control_in
     while(1){
         vu_to_pixels(control_input, &np_state);
         while(!neopixel_drive_pins(&np_state, p_neopixel)); // Takes about 1.2 ms for 24 neopixels
+        
         chan_out_word(c_adc, ADC_CMD_READ | 0);
         unsigned adc0 = chan_in_word(c_adc);
         printuintln(adc0);

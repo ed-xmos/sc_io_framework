@@ -8,8 +8,12 @@ file(GLOB_RECURSE XUA_SOURCES       ${XUA_SRC_PATH}/src/core/buffer/*.xc
                                     ${XUA_SRC_PATH}/src/core/buffer/*.c
                                     ${XUA_SRC_PATH}/src/core/endpoint0/*.xc
                                     ${XUA_SRC_PATH}/src/core/endpoint0/*.c
+                                    ${XUA_SRC_PATH}/src/core/audiohub/*.c
+                                    ${XUA_SRC_PATH}/src/core/audiohub/*.xc
                                     ${XUA_SRC_PATH}/src/core/user/*.c
                                     ${XUA_SRC_PATH}/src/core/support/*.xc
+                                    ${XUA_SRC_PATH}/src/core/ports/*.xc
+                                    ${XUA_SRC_PATH}/src/core/ports/*.c
                                     ${XUA_SRC_PATH}/src/dfu/*.c
                                     ${XUA_SRC_PATH}/src/dfu/*.xc
                                     # ${SW_PLL_SRC_PATH}/api
@@ -21,7 +25,10 @@ set(XUA_INCLUDES                    ${XUA_SRC_PATH}/api
                                     ${XUA_SRC_PATH}/src/core/audiohub
                                     ${XUA_SRC_PATH}/src/core/endpoint0
                                     ${XUA_SRC_PATH}/src/core/support
+                                    ${XUA_SRC_PATH}/src/core/ports
+                                    ${XUA_SRC_PATH}/src/core/pdm_mics
                                     ${XUA_SRC_PATH}/src/core/user/audiostream
+                                    ${XUA_SRC_PATH}/src/core/user/audiohw
                                     ${XUA_SRC_PATH}/src/core/user/hostactive
                                     ${XUA_SRC_PATH}/src/hid
                                     ${XUA_SRC_PATH}/src/core/clocking
