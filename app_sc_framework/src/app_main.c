@@ -30,9 +30,12 @@ void main_tile_0(chanend_t c_cross_tile[3]){
     // Memory shared between dsp_task_0 and control_task
     control_input_t control_input;
 
+    // ADC to control thread channel
+    channel_t c_adc = chan_alloc(); 
+
     PAR_JOBS(
-        PJOB(adc_task, ()),
-        PJOB(control_task, (c_cross_tile[2], &control_input)),
+        PJOB(adc_task, (c_adc.end_b)),
+        PJOB(control_task, (c_cross_tile[2], c_adc.end_a, &control_input)),
         PJOB(dsp_task_0, (c_cross_tile[1], &control_input)),
         PJOB(xua_wrapper, (c_cross_tile[0])) // This spawns 4 tasks
     );
@@ -43,6 +46,7 @@ void main_tile_1(chanend_t c_cross_tile[2]){
     aic3204_codec_reset();
     chan_out_word(c_cross_tile[0], 0); // Synch with codec reset
 
+    // I2S to DSP 1 channel
     channel_t c_dsp_1 = chan_alloc(); 
 
     PAR_JOBS(

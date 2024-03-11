@@ -3,35 +3,37 @@
 #include <print.h>
 #include <stdio.h>
 
+#include "adc_task.h"
 #include <xcore/hwtimer.h>
 #include <xcore/select.h>
-#include <xcore/port.h>
 #include <xcore/triggerable.h>
 #include <xcore/assert.h>
+#include <xcore/channel.h>
 
 
 #include "app_main.h"
 
-#define ADC_READ_INTERVAL       (1 * XS1_TIMER_KHZ)    // Time in between individual conversions 1ms with 10nf / 10k is practical minimum
-#define ADC_BITS_TARGET         10                     // Resolution for conversion. 10 bits is practical maximum 
-#define RESULT_HISTORY_DEPTH    32                     // For filtering raw conversion values
-#define RESULT_HYSTERESIS       2
 
-
-static enum adc_state{
+typedef enum adc_state_t{
         ADC_IDLE = 2,
         ADC_CHARGING = 1,
         ADC_CONVERTING = 0 // Optimisation as ISA can do != 0 on select guard
-}adc_state;
+}adc_state_t;
 
+typedef enum adc_mode_t{
+        ADC_CONVERT = 0,
+        ADC_CALIBRATION_MANUAL,
+        ADC_CALIBRATION_AUTO        // WIP
+}adc_mode_t;
 
 static inline int post_process_result(  int discharge_elapsed_time,
-                                        int *zero_offset_ticks,
-                                        int max_offsetted_conversion_time[],
+                                        unsigned *zero_offset_ticks,
+                                        unsigned max_offsetted_conversion_time[],
                                         int *conversion_history,
                                         int *hysteris_tracker,
                                         unsigned adc_idx,
-                                        unsigned num_ports){
+                                        unsigned num_ports,
+                                        adc_mode_t adc_mode){
     const int max_result_scale = (1 << ADC_BITS_TARGET) - 1;
 
     // Apply filter. First populate filter history.
@@ -53,7 +55,7 @@ static inline int post_process_result(  int discharge_elapsed_time,
         hist_ptr++;
     }
     int filtered_elapsed_time = accum / RESULT_HISTORY_DEPTH;
-    
+
     // Remove zero offset and clip
     int zero_offsetted_ticks = filtered_elapsed_time - *zero_offset_ticks;
     if(zero_offsetted_ticks < 0){
@@ -63,16 +65,30 @@ static inline int post_process_result(  int discharge_elapsed_time,
         zero_offsetted_ticks = 0;
     }
 
-    // Calculate scaled output
-    int scaled_result = (max_result_scale * zero_offsetted_ticks) / max_offsetted_conversion_time[adc_idx];
-
-    // Clip positive and move max if needed
-    if(scaled_result > max_result_scale){
-        // Handle moving up the maximum val
-        int new_max_offsetted_conversion_time = (max_result_scale * zero_offsetted_ticks) / scaled_result;
-        max_offsetted_conversion_time[adc_idx] += (new_max_offsetted_conversion_time - max_offsetted_conversion_time[adc_idx]) / 2; // Move max halfway to compensate gradually
-        scaled_result = max_result_scale;
+    // Clip count positive
+    if(zero_offsetted_ticks > max_offsetted_conversion_time[adc_idx]){
+        if(adc_mode == ADC_CALIBRATION_MANUAL){
+            max_offsetted_conversion_time[adc_idx] = zero_offsetted_ticks;
+        } else {
+            zero_offsetted_ticks = max_offsetted_conversion_time[adc_idx];  
+        }
     }
+
+    // Calculate scaled output
+    int scaled_result = 0;
+    if(max_offsetted_conversion_time[adc_idx]){ // Avoid / 0 during calibrate
+        scaled_result = (max_result_scale * zero_offsetted_ticks) / max_offsetted_conversion_time[adc_idx];
+    }
+
+    // // Clip positive and move max if needed
+    // if(scaled_result > max_result_scale){
+    //     scaled_result = max_result_scale; // Clip
+    //     // Handle moving up the maximum val
+    //     if(adc_mode == ADC_CALIBRATION_MANUAL){
+    //         int new_max_offsetted_conversion_time = (max_result_scale * zero_offsetted_ticks) / scaled_result;
+    //         max_offsetted_conversion_time[adc_idx] += (new_max_offsetted_conversion_time - max_offsetted_conversion_time[adc_idx]);
+    //     }
+    // }
 
     // Apply hysteresis
     if(scaled_result > hysteris_tracker[adc_idx] + RESULT_HYSTERESIS || scaled_result == max_result_scale){
@@ -87,23 +103,48 @@ static inline int post_process_result(  int discharge_elapsed_time,
     return scaled_result;
 }
 
-void adc_task(void){
+
+static int stored_max[ADC_NUM_CHANNELS] = {0};
+int adc_save_calibration(unsigned max_offsetted_conversion_time[], unsigned num_ports) __attribute__ ((weak));
+int adc_save_calibration(unsigned max_offsetted_conversion_time[], unsigned num_ports)
+{
+    for(int i = 0; i < num_ports; i++){
+        stored_max[i] = max_offsetted_conversion_time[i];
+    }
+
+    return 0; // Success
+}
+
+int adc_load_calibration(unsigned max_offsetted_conversion_time[], unsigned num_ports) __attribute__ ((weak));
+int adc_load_calibration(unsigned max_offsetted_conversion_time[], unsigned num_ports)
+{
+    for(int i = 0; i < num_ports; i++){
+        max_offsetted_conversion_time[i] = stored_max[i];
+    }
+
+    return 0; // Success
+}
+
+void adc_task(chanend_t c_adc){
     printstrln("adc_task");
     triggerable_disable_all();
 
-    port_t p_adc[] = {XS1_PORT_1A, XS1_PORT_1D}; // X0D00, 11
+    port_t p_adc[] = ADC_PINS;
     unsigned p_adc_idx = 0;
-    const unsigned num_ports = sizeof(p_adc) / sizeof(port_t);
+    const unsigned num_ports = ADC_NUM_CHANNELS;
+    adc_mode_t adc_mode = ADC_CONVERT;
+
 
     unsigned results[num_ports] = {0}; // The ADC read values scaled to max_result_scale
 
     const int port_drive = DRIVE_8MA;
     const int capacitor_nf = 10;
     const int resistor_ohms_max = 10500; // nominal maximum value
-    const int resistor_ohms_min = 9500; // nominal minimum value
+    // const int resistor_ohms_min = 9500; // nominal minimum value
+    const int resistor_ohms_min = 4500; // nominal minimum value
 
     const int charge_resistance_max = resistor_ohms_max / num_ports;
-    const int rc_times_to_charge_fully = 10; // 5 should be sufficient but slightly better crosstalk from 10
+    const int rc_times_to_charge_fully = 10; // 5 RC times should be sufficient but slightly better crosstalk from 10
     const int max_charge_period_ticks = (rc_times_to_charge_fully * capacitor_nf * charge_resistance_max) / 10;
 
     const int max_discharge_period_ticks = (capacitor_nf * resistor_ohms_max) / 10;
@@ -111,7 +152,7 @@ void adc_task(void){
     printintln(ADC_READ_INTERVAL); printintln(max_charge_period_ticks +max_discharge_period_ticks);
 
     // Calaculate zero offset based on drive strength
-    int zero_offset_ticks = 0;
+    unsigned zero_offset_ticks = 0;
     switch(port_drive){
         case DRIVE_2MA:
             zero_offset_ticks = capacitor_nf * 24;
@@ -135,7 +176,8 @@ void adc_task(void){
     int conversion_history[num_ports][RESULT_HISTORY_DEPTH] = {{0}};
     int hysteris_tracker[num_ports] = {0};
 
-    int max_offsetted_conversion_time[num_ports] = {0};
+    // Calibration for scaling to full scale
+    unsigned max_offsetted_conversion_time[num_ports] = {0};
 
     // Initialise all ports and apply estimated max conversion
     for(unsigned i = 0; i < num_ports; i++){
@@ -153,7 +195,7 @@ void adc_task(void){
     int trigger_time = hwtimer_get_time(t_adc);
     trigger_time += ADC_READ_INTERVAL;
 
-    adc_state = ADC_IDLE;
+    adc_state_t adc_state = ADC_IDLE;
 
     hwtimer_set_trigger_time(t_adc, trigger_time);
     triggerable_enable_trigger(t_adc);
@@ -166,7 +208,8 @@ void adc_task(void){
     while(1){
         SELECT_RES(
             CASE_GUARD_THEN(t_adc, adc_state != ADC_CONVERTING, adc_timer_event),
-            CASE_GUARD_THEN(p_adc[p_adc_idx_other], adc_state == ADC_CONVERTING, adc_read)
+            CASE_GUARD_THEN(p_adc[p_adc_idx_other], adc_state == ADC_CONVERTING, adc_read),
+            CASE_THEN(c_adc, adc_process_command)
         )
         {
             adc_timer_event:
@@ -215,16 +258,46 @@ void adc_task(void){
                                                         (int*)conversion_history,
                                                         hysteris_tracker,
                                                         p_adc_idx,
-                                                        num_ports);
+                                                        num_ports,
+                                                        adc_mode);
 
                 hwtimer_set_trigger_time(t_adc, trigger_time);
                 adc_state = ADC_IDLE;
                 if(++p_adc_idx == num_ports){
                     p_adc_idx = 0;
-                    printf("ADCs: %d %d\n", results[0], results[1]);
+                    // printf("ADCs: %d %d\n", results[0], results[1]);
+                    // printintln(discharge_elapsed_time);
                 }
             }
             break;
-        }
-    }
+
+            adc_process_command:
+            {
+                uint32_t command = chan_in_word(c_adc);
+                switch(command & ADC_CMD_MASK){
+                    case ADC_CMD_READ:
+                        (void)command; // Work around  error: expected expression
+                        unsigned idx = command & ~ADC_CMD_MASK;
+                        chan_out_word(c_adc, results[idx]);
+                    break;
+
+                    case ADC_CMD_CAL_MODE_START:
+                        adc_mode = ADC_CALIBRATION_MANUAL;
+                        for(unsigned i = 0; i < num_ports; i++){
+                            max_offsetted_conversion_time[i] = 0;
+                        }
+
+                        printstrln("ADC_CALIBRATION_MANUAL");
+                    break;
+
+                    case ADC_CMD_CAL_MODE_FINISH:
+                        adc_mode = ADC_CONVERT;
+                        adc_save_calibration(max_offsetted_conversion_time, num_ports);
+                        printstrln("ADC_CALIBRATION_SAVED");
+                    break; 
+                }
+            }
+            break;
+        } // Select
+    } // while 1
 }

@@ -6,6 +6,7 @@
 #include "app_main.h"
 #include "i2c.h"
 #include "control_task.h"
+#include "adc_task.h"
 #include "neopixel.h"
 
 #define VU_GREEN    0x000010
@@ -30,9 +31,14 @@ void vu_to_pixels(control_input_t *control_input, neopixel_state *np_state){
     }    
 }
 
-void control_task(chanend_t c_uart, control_input_t *control_input){
+void control_task(chanend_t c_uart, chanend_t c_adc, control_input_t *control_input){
     printstrln("control_task");
 
+    // Buttons
+    port_t p_buttons = XS1_PORT_4D;
+    port_enable(p_buttons);
+
+    // Drive a line high on WiFi to provide power from IO pin
     port_enable(XS1_PORT_4F);
     port_out(XS1_PORT_4F, 0xf); // Drive 3.3V to these pins & disable WiFi chip
     set_pad_properties(XS1_PORT_4F, DRIVE_12MA, PULL_NONE, 0, 0);
@@ -42,18 +48,30 @@ void control_task(chanend_t c_uart, control_input_t *control_input){
     port_t p_neopixel = WIFI_MISO;
     port_enable(p_neopixel);
     port_start_buffered(p_neopixel, 32);
-    neopixel_state np_state = {{0}};
+    neopixel_state np_state = {0};
     const unsigned length = 24;
 
     hwtimer_realloc_xc_timer();
     neopixel_init(&np_state, length, p_neopixel, cb, 3);
 
+    chan_out_word(c_adc, ADC_CMD_CAL_MODE_START);
+
     while(1){
-        // for(unsigned i=0;i<length;i++){
-        //     np_state.data[i] = i;
-        // }
         vu_to_pixels(control_input, &np_state);
         while(!neopixel_drive_pins(&np_state, p_neopixel)); // Takes about 1.2 ms for 24 neopixels
+        chan_out_word(c_adc, ADC_CMD_READ | 0);
+        unsigned adc0 = chan_in_word(c_adc);
+        printuintln(adc0);
+
+        unsigned pb = port_in(p_buttons);
+        if((pb & 0x1) == 0){ // Button 0
+            chan_out_word(c_adc, ADC_CMD_CAL_MODE_START);
+        }
+        if((pb & 0x2) == 0){ // Button 1
+            chan_out_word(c_adc, ADC_CMD_CAL_MODE_FINISH);
+        }
+
+        delay_milliseconds(100);
     }
 }
 
