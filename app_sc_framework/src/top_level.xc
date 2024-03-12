@@ -3,8 +3,10 @@
 
 #include <platform.h>
 #include <xs1.h>
-// #include "adc_task.h"
-// #include "control_task.h"
+
+#include "app_config.h"
+#include "adc_task.h"
+#include "control_task.h"
 // #include "dsp_wrapper.h"
 #include "xua_conf.h"
 extern "C"{
@@ -14,7 +16,7 @@ extern "C"{
 #include "xua_conf.h"
 #include "xua.h"
 #include "xud.h"
-#include "app_config.h"
+
 
 on tile[0]: port p_for_mclk_count = XS1_PORT_16B;
 on tile[0]: port p_for_mclk_in = WIFI_CLK;
@@ -55,12 +57,13 @@ int main() {
             XUD_EpType epTypeTableOut[2] = {XUD_EPTYPE_CTL | XUD_STATUS_ENABLE, XUD_EPTYPE_ISO};
             XUD_EpType epTypeTableIn[3] = {XUD_EPTYPE_CTL | XUD_STATUS_ENABLE, XUD_EPTYPE_ISO, XUD_EPTYPE_ISO};
 
-            /* Connect mclk_count via clock-block to mclk_in pin */
-
             /* Connect master-clock clock-block to clock-block pin */
             set_clock_src(usb_mclk_in_clk, p_for_mclk_in);           /* Clock clock-block from mclk pin */
             set_port_clock(p_for_mclk_count, usb_mclk_in_clk);       /* Clock the "count" port from the clock block */
             start_clock(usb_mclk_in_clk);                            /* Set the clock off running */
+
+            /* Memory shared by dsp_task_0 and read by control_task */
+            control_input_t control_input;
 
             par{
                 XUD_Main(c_ep_out, 2, c_ep_in, 3,
@@ -69,8 +72,8 @@ int main() {
                 XUA_Endpoint0(c_ep_out[0], c_ep_in[0], c_aud_ctl, null, null, null, null);
                 XUA_Buffer(c_ep_out[1], c_ep_in[2], c_ep_in[1], c_sof, c_aud_ctl, p_for_mclk_count, c_aud);
 
-                // adc_task(c_adc);
-                // control_task(c_uart, c_adc);
+                adc_task(c_adc);
+                unsafe{control_task(c_uart, c_adc, &control_input);}
             }
         }
         on tile[1]: {
@@ -79,7 +82,7 @@ int main() {
 
             par{
                 XUA_AudioHub(c_aud, clk_audio_mclk, clk_audio_bclk, p_mclk_in, p_lrclk, p_bclk, p_i2s_dac, p_i2s_adc);
-                // uart_task(c_uart);
+                uart_task(c_uart);
             }
         }
     }
