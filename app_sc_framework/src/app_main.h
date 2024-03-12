@@ -1,7 +1,8 @@
 // Copyright 2024 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
-#pragma once
+#ifndef _XUA_APP_MAIN_H_ 
+#define _XUA_APP_MAIN_H_
 
 #include "xs3a_user.h"
 #include <stdint.h>
@@ -12,7 +13,7 @@
 // Larger numbers increase hold time but reduce setup time.
 #define PORT_DELAY      0x7007
 #define DELAY_SHIFT     0x3
-#define set_pad_delay(port, delay)  {__asm__ __volatile__ ("setc res[%0], %1": : "r" (port) , "r" ((delay << 0x3) | PORT_DELAY));}
+#define set_pad_delay_c(port, delay)  {__asm__ __volatile__ ("setc res[%0], %1": : "r" (port) , "r" ((delay << 0x3) | PORT_DELAY));}
 
 // Macro to adjust input pad capture clock edge
 #define PORT_SAMPLE     0x4007
@@ -61,3 +62,5 @@
 #define LOWER_BYTE_FROM_U16(u16)                ((uint8_t)(u16 & 0xff))
 #define UPPER_BYTE_FROM_U16(u16)                ((uint8_t)(u16 >> 8))
 #define U16_FROM_BYTES(upper_byte, lower_byte)  (((uint16_t)upper_byte << 8) | (uint16_t)lower_byte)
+
+#endif

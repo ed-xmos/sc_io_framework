@@ -3,9 +3,11 @@
 
 #pragma once
 
+#ifndef __XC__
 #include <xcore/parallel.h>
 #include <xcore/channel.h>
 #include <xcore/port.h>
+#endif
 
 // ADC channels count and port declaraions
 #define ADC_PINS                    {XS1_PORT_1A, XS1_PORT_1D}  // Sets which pins are to be used (channels 0..n) and defines channel count.  // X0D00, 11
@@ -23,7 +25,9 @@
 #define ADC_CMD_CAL_MODE_FINISH     0x03000000
 #define ADC_CMD_MASK                0xff000000
 
-
+#ifdef __XC__
+void adc_task(chanend c_adc);
+#else
 DECLARE_JOB(adc_task, (chanend_t));
 void adc_task(chanend_t c_adc);
-
+#endif
