@@ -3,10 +3,15 @@
 
 #pragma once
 
+#include "control_task.h"
+
+#ifdef __XC__
+void dsp_task_0(chanend c_dsp_0, control_input_t * unsafe control_input);
+void dsp_task_1(chanend c_dsp_1);
+#else
 #include <xcore/parallel.h>
 #include <xcore/channel.h>
 #include <xcore/channel_transaction.h>
-#include "control_task.h"
 
 DECLARE_JOB(dsp_task_0, (chanend_t, control_input_t *));
 void dsp_task_0(chanend_t c_dsp_0, control_input_t *control_input);
@@ -14,5 +19,5 @@ void dsp_task_0(chanend_t c_dsp_0, control_input_t *control_input);
 DECLARE_JOB(dsp_task_1, (chanend_t));
 void dsp_task_1(chanend_t c_dsp_1);
 
+#endif
 
-void dsp_tile_0_exchange(chanend_t c_dsp_0, int32_t *samples, size_t n_samples);

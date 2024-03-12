@@ -7,13 +7,13 @@
 #include "xua_conf.h"
 #include "dsp_wrapper.h"
 
-void dsp_tile_0_exchange(chanend_t c_dsp_0, int32_t *samples, size_t n_ch){
-    transacting_chanend_t tc = chan_init_transaction_master(c_dsp_0);
-    t_chan_out_word(&tc, n_ch);
-    t_chan_out_buf_word(&tc, (uint32_t*)samples, n_ch);
-    t_chan_in_buf_word(&tc, (uint32_t*)samples, n_ch);
-    c_dsp_0 = chan_complete_transaction(tc);
-}
+// void dsp_tile_0_exchange(chanend_t c_dsp_0, int32_t *samples, size_t n_ch){
+//     transacting_chanend_t tc = chan_init_transaction_master(c_dsp_0);
+//     t_chan_out_word(&tc, n_ch);
+//     t_chan_out_buf_word(&tc, (uint32_t*)samples, n_ch);
+//     t_chan_in_buf_word(&tc, (uint32_t*)samples, n_ch);
+//     c_dsp_0 = chan_complete_transaction(tc);
+// }
 
 typedef struct vu_state_t{
     int32_t vu;

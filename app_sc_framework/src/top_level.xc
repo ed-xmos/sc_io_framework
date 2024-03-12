@@ -7,7 +7,7 @@
 #include "app_config.h"
 #include "adc_task.h"
 #include "control_task.h"
-// #include "dsp_wrapper.h"
+#include "dsp_wrapper.h"
 #include "xua_conf.h"
 extern "C"{
     #include "sw_pll.h"
@@ -37,10 +37,11 @@ void aic3204_board_init();
 int main() {
     chan c_aud;
     chan c_uart;
+    chan c_dsp;
 
     par
     {
-        on tile[0]:{
+        on tile[0]:unsafe{
             delay_milliseconds(500);
             aic3204_board_init(); // Drives I2C lines to init codec
 
@@ -64,6 +65,7 @@ int main() {
 
             /* Memory shared by dsp_task_0 and read by control_task */
             control_input_t control_input;
+            control_input_t * unsafe control_input_ptr = &control_input;
 
             par{
                 XUD_Main(c_ep_out, 2, c_ep_in, 3,
@@ -73,7 +75,8 @@ int main() {
                 XUA_Buffer(c_ep_out[1], c_ep_in[2], c_ep_in[1], c_sof, c_aud_ctl, p_for_mclk_count, c_aud);
 
                 adc_task(c_adc);
-                unsafe{control_task(c_uart, c_adc, &control_input);}
+                control_task(c_uart, c_adc, control_input_ptr);
+                dsp_task_0(c_dsp, control_input_ptr);
             }
         }
         on tile[1]: {
@@ -82,6 +85,7 @@ int main() {
 
             par{
                 XUA_AudioHub(c_aud, clk_audio_mclk, clk_audio_bclk, p_mclk_in, p_lrclk, p_bclk, p_i2s_dac, p_i2s_adc);
+                dsp_task_1(c_dsp);
                 uart_task(c_uart);
             }
         }
