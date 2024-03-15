@@ -1,18 +1,6 @@
-[submodule "modules/fwk_io"]
-	path = modules/fwk_io
-	url = git@github.com:xmos/fwk_io.git
-[submodule "modules/fwk_core"]
-	path = modules/fwk_core
-	url = git@github.com:xmos/fwk_core.git
-[submodule "modules/lib_xua"]
-	path = modules/lib_xua
-	url = git@github.com:xmos/lib_xua.git
-[submodule "xmos_xmake_toolchain"]
-	path = xmos_xmake_toolchain
-	url = git@github.com:xmos/xmos_cmake_toolchain.git
-[submodule "modules/lib_sw_pll"]
-	path = modules/lib_sw_pll
-	url = https://github.com/xmos/lib_sw_pll
-[submodule "modules/lib_neopixel"]
-	path = modules/lib_neopixel
+[submodule "lib_neopixel"]
+	path = lib_neopixel
 	url = git@github.com:xmos/lib_neopixel.git
+[submodule "lib_uart"]
+	path = lib_uart
+	url = git@github.com:xmos/lib_uart.git
