@@ -26,19 +26,27 @@ on tile[1]: port p_uart_tx = XS1_PORT_4B; // Bit 2 X1D06
 
 unsafe void vu_to_pixels(control_input_t * unsafe control_input, neopixel_state &np_state){
     for(int i = 0; i < 12; i++){
-        int32_t threshold = 1 << (i + 20);
-        for(int ch = 0; ch < 2; ch++){
-            if(control_input->vu[ch] > threshold){
-                if(i < 8){
-                    np_state.data[i] = VU_GREEN;
-                } else {
-                    np_state.data[i] = VU_RED;
-                }
+        int32_t threshold = 1 << (2 * i + 7);
+        if(control_input->vu[0] > threshold){
+            if(i < 8){
+                np_state.data[i] = VU_GREEN;
             } else {
-                np_state.data[i] = VU_OFF;
+                np_state.data[i] = VU_RED;
             }
+        } else {
+            np_state.data[i] = VU_OFF;
         }
-    }    
+
+        if(control_input->vu[1] > threshold){
+            if(i < 8){
+                np_state.data[23 - i] = VU_GREEN;
+            } else {
+                np_state.data[23 - i] = VU_RED;
+            }
+        } else {
+            np_state.data[23 - i] = VU_OFF;
+        }
+    }
 }
 
 void control_task(chanend c_uart, chanend c_adc, control_input_t * unsafe control_input){

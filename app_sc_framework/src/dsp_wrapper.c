@@ -8,13 +8,6 @@
 #include "xua_conf.h"
 #include "dsp_wrapper.h"
 
-// void dsp_tile_0_exchange(chanend_t c_dsp_0, int32_t *samples, size_t n_ch){
-//     transacting_chanend_t tc = chan_init_transaction_master(c_dsp_0);
-//     t_chan_out_word(&tc, n_ch);
-//     t_chan_out_buf_word(&tc, (uint32_t*)samples, n_ch);
-//     t_chan_in_buf_word(&tc, (uint32_t*)samples, n_ch);
-//     c_dsp_0 = chan_complete_transaction(tc);
-// }
 
 typedef struct vu_state_t{
     int32_t vu;
@@ -26,11 +19,12 @@ typedef struct vu_state_t{
 void process_vu(int32_t *samples, size_t n_ch, vu_state_t vu_state[NUM_USB_CHAN_OUT]){
     for(int ch = 0; ch < n_ch; ch++){
         // Apply decay
-        const int32_t decay_constant = (int32_t)((float)((1<<31) - 1) * 0.9995);
+        const int32_t decay_constant = (int32_t)((float)((1<<31) - 1) * 0.9990);
         vu_state[ch].vu = ((int64_t)decay_constant * (int64_t)vu_state[ch].vu) >> 31;
-        int32_t abs_samp = ABS(samples[ch]);
-        if(abs_samp > vu_state[ch].vu){
-            vu_state[ch].vu = abs_samp;
+        // Calc instantaneous approx VU
+        int32_t abs_sq = ((int64_t)samples[ch] * (int64_t)samples[ch]) >> 31; // Square
+        if(abs_sq > vu_state[ch].vu){
+            vu_state[ch].vu = abs_sq;
         }
     }
 }
@@ -40,36 +34,37 @@ void dsp_task_0(chanend_t c_dsp, control_input_t *control_input){
 
     vu_state_t vu_state[NUM_USB_CHAN_OUT] = {{0}};
 
-    int32_t samples[NUM_USB_CHAN_OUT];
+    int32_t samples_from_host[NUM_USB_CHAN_OUT] = {0};
+    int32_t samples_to_host[NUM_USB_CHAN_IN] = {0};
     while(1){
         transacting_chanend_t tc = chan_init_transaction_slave(c_dsp);
         size_t n_ch = t_chan_in_word(&tc);
-        t_chan_in_buf_word(&tc, (uint32_t*)samples, n_ch);
-        t_chan_out_buf_word(&tc, (uint32_t*)samples, n_ch);
+        t_chan_in_buf_word(&tc, (uint32_t*)samples_from_host, n_ch);
+        t_chan_out_buf_word(&tc, (uint32_t*)samples_to_host, n_ch);
         c_dsp = chan_complete_transaction(tc);
 
-        process_vu(samples, n_ch, vu_state);
+        process_vu(samples_from_host, n_ch, vu_state);
+
         control_input->vu[0] = vu_state[0].vu;
         control_input->vu[1] = vu_state[1].vu;
     }
 }
 
-chanend_t c_dsp_synch_end = 0;
-int32_t samples_from_host[NUM_USB_CHAN_OUT] = {0};
-int32_t samples_to_host[NUM_USB_CHAN_IN] = {0};
+volatile chanend_t c_dsp_synch_end = 0;
+volatile int32_t samples_from_host_g[NUM_USB_CHAN_OUT] = {0};
+volatile int32_t samples_to_host_g[NUM_USB_CHAN_IN] = {0};
 
 void UserBufferManagementInit(unsigned sampFreq)
 {
     while(c_dsp_synch_end == 0){
         // Wait for valid chanend
     }
-    printstr("ubm init fin\n");
 }
 
 void UserBufferManagement(unsigned sampsFromUsbToAudio[], unsigned sampsFromAudioToUsb[]){
-    memcpy(samples_from_host, sampsFromUsbToAudio, sizeof(samples_from_host));
-    memcpy(sampsFromAudioToUsb, samples_to_host, sizeof(samples_to_host));
-    printstr("ubm\n");
+    for(int i = 0; i < NUM_USB_CHAN_OUT; i++){
+        samples_from_host_g[i] = sampsFromUsbToAudio[i];
+    }
     chan_out_word(c_dsp_synch_end, 0);
 }
 
@@ -79,12 +74,15 @@ void dsp_task_1(chanend_t c_dsp){
     channel_t c_dsp_synch = chan_alloc();
     c_dsp_synch_end = c_dsp_synch.end_b;
     while(1){
+        // Wait until samples have been populated by UserBufferManagement
         chan_in_word(c_dsp_synch.end_a);
 
+        // Now send them to dsp_task_0
         transacting_chanend_t tc = chan_init_transaction_master(c_dsp);
         t_chan_out_word(&tc, NUM_USB_CHAN_OUT);
-        t_chan_out_buf_word(&tc, (uint32_t*)samples_from_host, NUM_USB_CHAN_OUT);
-        t_chan_in_buf_word(&tc, (uint32_t*)samples_to_host, NUM_USB_CHAN_OUT);
+        t_chan_out_buf_word(&tc, (uint32_t*)samples_from_host_g, NUM_USB_CHAN_OUT);
+        t_chan_in_buf_word(&tc, (uint32_t*)samples_to_host_g, NUM_USB_CHAN_IN);
         c_dsp = chan_complete_transaction(tc);
+        (void)samples_from_host_g[0]; // TODO this seems to be needed to force samples_from_host_g to be volatile
     }
 }
