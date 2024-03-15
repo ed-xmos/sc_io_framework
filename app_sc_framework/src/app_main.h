@@ -12,7 +12,7 @@
 // Larger numbers increase hold time but reduce setup time.
 #define PORT_DELAY      0x7007
 #define DELAY_SHIFT     0x3
-#define set_pad_delay(port, delay)  {__asm__ __volatile__ ("setc res[%0], %1": : "r" (port) , "r" ((delay << 0x3) | PORT_DELAY));}
+// #define set_pad_delay(port, delay)  {__asm__ __volatile__ ("setc res[%0], %1": : "r" (port) , "r" ((delay << 0x3) | PORT_DELAY));}
 
 // Macro to adjust input pad capture clock edge
 #define PORT_SAMPLE     0x4007
