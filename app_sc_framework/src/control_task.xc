@@ -105,13 +105,14 @@ void uart_task(chanend c_uart){
     printstrln("uart_task");
     interface uart_tx_if i_uart_tx;
     output_gpio_if i_gpio_tx[1];
+    char pin_map[] = {2}; // We output on bit 2 of the 4b port
 
     [[combine]]
     par{
         uart_tx(i_uart_tx, null,
                 BAUD_RATE, UART_PARITY_NONE, 8, 1,
                 i_gpio_tx[0]);
-        output_gpio(i_gpio_tx, 1, p_uart_tx, null);
+        output_gpio(i_gpio_tx, 1, p_uart_tx, pin_map);
         uart_relay(c_uart, i_uart_tx);
     }
 }
