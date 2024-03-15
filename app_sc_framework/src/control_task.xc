@@ -20,7 +20,9 @@ on tile[0]: port p_buttons = XS1_PORT_4D;
 on tile[0]: port p_wifi_ctl = XS1_PORT_4F;
 on tile[0]: out buffered port:32 p_neopixel = WIFI_MISO;
 on tile[0]: clock cb_neo = XS1_CLKBLK_3;
+on tile[1]: port p_uart_tx = XS1_PORT_4B; // Bit 2 X1D06
 
+#define BAUD_RATE 115200
 
 unsafe void vu_to_pixels(control_input_t * unsafe control_input, neopixel_state &np_state){
     for(int i = 0; i < 12; i++){
@@ -87,26 +89,29 @@ void control_task(chanend c_uart, chanend c_adc, control_input_t * unsafe contro
     }
 }
 
-// HIL_UART_TX_CALLBACK_ATTR
-// void tx_fifo_empty(void *app_data){
-//     // Do nothing
-// }
+[[combinable]]
+void uart_relay(chanend c_uart, client uart_tx_if i_uart_tx){
+    uint8_t ch = 0;
+    while(1){
+        select{
+            case c_uart :> ch:
+                i_uart_tx.write(ch);
+            break;
+        }
+    }
+}
 
 void uart_task(chanend c_uart){
     printstrln("uart_task");
+    interface uart_tx_if i_uart_tx;
+    output_gpio_if i_gpio_tx[1];
 
-    // port_t p_uart_tx = XS1_PORT_4B; // Bit 2 X1D06
-    // hwtimer_t tmr = hwtimer_alloc();
-    // const unsigned uart_buff_size = 64;
-
-    // uint8_t buffer[uart_buff_size + 1] = {0};
-    // uart_tx_t uart;
-    // uart_tx_init(&uart, p_uart_tx, 115200, 8, UART_PARITY_NONE, 1, tmr, buffer, sizeof(buffer), tx_fifo_empty, &uart);
-    // uart.tx_port_high_val = (1 << 2); // Use bit 2 for signalling
-
-    // while(1){
-    //     // Wait on channel for next char
-    //     uint8_t tx_data = chan_in_byte(c_uart);
-    //     uart_tx(&uart, tx_data);
-    // }
+    [[combine]]
+    par{
+        uart_tx(i_uart_tx, null,
+                BAUD_RATE, UART_PARITY_NONE, 8, 1,
+                i_gpio_tx[0]);
+        output_gpio(i_gpio_tx, 1, p_uart_tx, null);
+        uart_relay(c_uart, i_uart_tx);
+    }
 }

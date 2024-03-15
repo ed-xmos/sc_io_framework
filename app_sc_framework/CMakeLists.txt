@@ -18,7 +18,7 @@ set(APP_COMPILER_FLAGS  -O2
 # Needed by this application and not part of library
 set(APP_C_SRCS          ../lib_neopixel/lib_neopixel/src/neopixel.xc
                         ../lib_uart/lib_uart/src/uart_tx.xc
-                        # ../lib_gpio/lib_gpio/src/*.xc
+                        ../lib_gpio/lib_gpio/src/gpio.xc
                         src/dac_setup/aic3204.xc
                         src/dac_setup/dac_port.xc
                         src/dsp_wrapper.c
