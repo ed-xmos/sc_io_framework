@@ -1,7 +1,8 @@
 // Copyright 2024 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
-#pragma once
+#ifndef _XUA_APP_MAIN_H_ 
+#define _XUA_APP_MAIN_H_
 
 #include "xs3a_user.h"
 #include <stdint.h>
@@ -61,3 +62,5 @@
 #define LOWER_BYTE_FROM_U16(u16)                ((uint8_t)(u16 & 0xff))
 #define UPPER_BYTE_FROM_U16(u16)                ((uint8_t)(u16 >> 8))
 #define U16_FROM_BYTES(upper_byte, lower_byte)  (((uint16_t)upper_byte << 8) | (uint16_t)lower_byte)
+
+#endif
