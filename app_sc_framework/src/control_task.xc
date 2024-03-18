@@ -51,7 +51,7 @@ unsafe void vu_to_pixels(control_input_t * unsafe control_input, neopixel_state 
 }
 
 void control_task(chanend c_uart, chanend c_adc, control_input_t * unsafe control_input){
-    printstrln("control_task");
+    printf("control_task\n");
 
     // Drive a line high on WiFi to provide power from IO pin
     p_wifi_ctl <: 0xf; // Drive 3.3V to these pins & disable WiFi chip
@@ -70,10 +70,11 @@ void control_task(chanend c_uart, chanend c_adc, control_input_t * unsafe contro
         unsafe{vu_to_pixels(control_input, np_state);}
         while(!neopixel_drive_pins(np_state, p_neopixel)); // Takes about 1.2 ms for 24 neopixels
         
-        c_adc <: ADC_CMD_READ | 0;
+        unsigned ch = 0;
+        c_adc <: (uint32_t)(ADC_CMD_READ | ch);
         unsigned adc0;
         c_adc :> adc0;
-        printuintln(adc0);
+        printf("ADC ch %u : %u\n", ch, adc0);
 
         // Read buttons
         unsigned pb;
