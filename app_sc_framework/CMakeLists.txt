@@ -22,7 +22,6 @@ set(APP_C_SRCS          ../lib_neopixel/lib_neopixel/src/neopixel.xc
                         src/dac_setup/aic3204.xc
                         src/dac_setup/dac_port.xc
                         src/dsp_wrapper.c
-                        src/adc_task.c
                         )
 
 set(APP_INCLUDES        src/

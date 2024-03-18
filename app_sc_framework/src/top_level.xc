@@ -5,7 +5,7 @@
 #include <xs1.h>
 
 #include "app_config.h"
-#include "adc_task.h"
+#include "adc_pot.h"
 #include "control_task.h"
 #include "dsp_wrapper.h"
 #include "xua_conf.h"
@@ -29,6 +29,8 @@ on tile[1]: buffered out port:32 p_bclk         = PORT_I2S_BCLK;     /* I2S L/R-
 on tile[1]: clock clk_audio_mclk                = XS1_CLKBLK_1;
 on tile[1]: clock clk_audio_bclk                = XS1_CLKBLK_2;
 on tile[1]: port p_mclk_in                      = PORT_MCLK_IN;
+
+on tile[0]: port p_adc[] = {XS1_PORT_1A, XS1_PORT_1D}; // Sets which pins are to be used (channels 0..n) // X0D00, 11;
 
 
 void aic3204_board_init();
@@ -67,6 +69,14 @@ int main() {
             control_input_t control_input;
             control_input_t * unsafe control_input_ptr = &control_input;
 
+            /* Quasi-ADC setup parameters */
+            const unsigned capacitor_pf = 4000;
+            const unsigned resistor_ohms = 47000; // nominal maximum value ned to end
+            const unsigned resistor_series_ohms = 470;
+            const float v_rail = 3.3;
+            const float v_thresh = 1.14;
+            const adc_pot_config_t adc_config = {capacitor_pf, resistor_ohms, resistor_series_ohms, v_rail, v_thresh};
+
             par{
                 XUD_Main(c_ep_out, 2, c_ep_in, 3,
                      c_sof, epTypeTableOut, epTypeTableIn, 
@@ -74,7 +84,7 @@ int main() {
                 XUA_Endpoint0(c_ep_out[0], c_ep_in[0], c_aud_ctl, null, null, null, null);
                 XUA_Buffer(c_ep_out[1], c_ep_in[2], c_ep_in[1], c_sof, c_aud_ctl, p_for_mclk_count, c_aud);
 
-                adc_task(c_adc);
+                adc_pot_task(c_adc, p_adc, 1, adc_config);
                 control_task(c_uart, c_adc, control_input_ptr);
                 dsp_task_0(c_dsp, control_input_ptr);
             }

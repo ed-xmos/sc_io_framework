@@ -9,7 +9,7 @@
 #include "i2c.h"
 #include "control_task.h"
 #include "neopixel.h"
-#include "adc_task.h"
+#include "adc_pot.h"
 #include "uart.h"
 
 #define VU_GREEN    0x000010
@@ -21,6 +21,7 @@ on tile[0]: port p_wifi_ctl = XS1_PORT_4F;
 on tile[0]: out buffered port:32 p_neopixel = WIFI_MISO;
 on tile[0]: clock cb_neo = XS1_CLKBLK_3;
 on tile[1]: port p_uart_tx = XS1_PORT_4B; // Bit 2 X1D06
+
 
 #define BAUD_RATE 115200
 
@@ -65,8 +66,6 @@ void control_task(chanend c_uart, chanend c_adc, control_input_t * unsafe contro
     const uint8_t msg[] = "Hello world!\n";
     unsigned msg_idx = 0;
 
-    c_adc <: ADC_CMD_CAL_MODE_START;
-
     while(1){
         unsafe{vu_to_pixels(control_input, np_state);}
         while(!neopixel_drive_pins(np_state, p_neopixel)); // Takes about 1.2 ms for 24 neopixels
@@ -80,11 +79,8 @@ void control_task(chanend c_uart, chanend c_adc, control_input_t * unsafe contro
         unsigned pb;
         p_buttons :> pb;
         if((pb & 0x1) == 0){ // Button 0
-            c_adc <: ADC_CMD_CAL_MODE_START;
         }
         if((pb & 0x2) == 0){ // Button 1
-            c_adc <: ADC_CMD_CAL_MODE_START;
-            c_adc <: ADC_CMD_CAL_MODE_FINISH;
         }
 
         // Send a character to the UART
