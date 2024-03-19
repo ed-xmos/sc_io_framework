@@ -12,12 +12,12 @@
 extern "C"{
     #include "sw_pll.h"
 }
-#include "aic3204.h"
+#include "i2c.h"
 #include "xua_conf.h"
 #include "xua.h"
 #include "xud.h"
 
-
+// Audio resources for USB and I2S
 on tile[0]: port p_for_mclk_count = XS1_PORT_16B;
 on tile[0]: port p_for_mclk_in = WIFI_CLK;
 on tile[0]: clock usb_mclk_in_clk = USB_MCLK_COUNT_CLK_BLK;
@@ -30,10 +30,22 @@ on tile[1]: clock clk_audio_mclk                = XS1_CLKBLK_1;
 on tile[1]: clock clk_audio_bclk                = XS1_CLKBLK_2;
 on tile[1]: port p_mclk_in                      = PORT_MCLK_IN;
 
+
+// I2C resources (defined in audiohw.c)
+extern port p_scl;
+extern port p_sda;
+
+#define CODEC_RELEASE_RESET             (0x8) // Release codec from
+on tile[1]: out port p_codec_reset  = PORT_CODEC_RST_N;
+
+
+// GPIO resources
+// on tile[0]: in port p_buttons =                             XS1_PORT_4E;
+// on tile[0]: out port p_leds =                               XS1_PORT_4F;
 on tile[0]: port p_adc[] = {XS1_PORT_1A, XS1_PORT_1D}; // Sets which pins are to be used (channels 0..n) // X0D00, 11;
 
 
-void aic3204_board_init();
+extern void board_setup(void);
 
 
 int main() {
@@ -44,8 +56,8 @@ int main() {
     par
     {
         on tile[0]:unsafe{
-            delay_milliseconds(500);
-            aic3204_board_init(); // Drives I2C lines to init codec
+            board_setup();
+            delay_milliseconds(100);
 
             /* Control chans */
             chan c_adc;
@@ -77,6 +89,9 @@ int main() {
             const float v_thresh = 1.14;
             const adc_pot_config_t adc_config = {capacitor_pf, resistor_ohms, resistor_series_ohms, v_rail, v_thresh};
 
+            /* I2C setup */
+            interface i2c_master_if i2c[1];
+
             par{
                 XUD_Main(c_ep_out, 2, c_ep_in, 3,
                      c_sof, epTypeTableOut, epTypeTableIn, 
@@ -85,13 +100,13 @@ int main() {
                 XUA_Buffer(c_ep_out[1], c_ep_in[2], c_ep_in[1], c_sof, c_aud_ctl, p_for_mclk_count, c_aud);
 
                 adc_pot_task(c_adc, p_adc, 1, adc_config);
-                control_task(c_uart, c_adc, control_input_ptr);
+                control_task(c_uart, c_adc, control_input_ptr, i2c[0]);
+                i2c_master(i2c, 1, p_scl, p_sda, 100);
                 dsp_task_0(c_dsp, control_input_ptr);
             }
         }
         on tile[1]: {
-            sw_pll_fixed_clock(MCLK_48);
-            aic3204_codec_reset(); // Toggles XS1_PORT_4B for codec reset
+            p_codec_reset <: CODEC_RELEASE_RESET;
 
             par{
                 XUA_AudioHub(c_aud, clk_audio_mclk, clk_audio_bclk, p_mclk_in, p_lrclk, p_bclk, p_i2s_dac, p_i2s_adc);

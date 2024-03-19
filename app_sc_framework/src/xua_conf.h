@@ -14,6 +14,7 @@
 #define MCLK_48 (256 * 48000)
 #define MIN_FREQ 48000
 #define MAX_FREQ 48000
+#define DEFAULT_FREQ MIN_FREQ
 
 #define EXCLUDE_USB_AUDIO_MAIN
 

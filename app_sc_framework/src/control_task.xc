@@ -23,6 +23,10 @@ on tile[0]: clock cb_neo = XS1_CLKBLK_3;
 on tile[1]: port p_uart_tx = XS1_PORT_4B; // Bit 2 X1D06
 
 
+extern void codec_init(client interface i2c_master_if i_i2c);
+extern void codec_config(client interface i2c_master_if i_i2c, unsigned samFreq, unsigned mClk, unsigned dsdMode, unsigned sampRes_DAC, unsigned sampRes_ADC);
+
+
 #define BAUD_RATE 115200
 
 unsafe void vu_to_pixels(control_input_t * unsafe control_input, neopixel_state &np_state){
@@ -50,12 +54,12 @@ unsafe void vu_to_pixels(control_input_t * unsafe control_input, neopixel_state 
     }
 }
 
-void control_task(chanend c_uart, chanend c_adc, control_input_t * unsafe control_input){
+void control_task(chanend c_uart, chanend c_adc, control_input_t * unsafe control_input, client interface i2c_master_if i_i2c){
     printf("control_task\n");
 
-    // Drive a line high on WiFi to provide power from IO pin
-    p_wifi_ctl <: 0xf; // Drive 3.3V to these pins & disable WiFi chip
-    // set_pad_properties(p_wifi_ctl, DRIVE_12MA, PULL_NONE, 0, 0);
+    // Initial audio HW setup
+    codec_init(i_i2c);
+    codec_config(i_i2c, DEFAULT_FREQ, get_master_clock_from_samp_rate(DEFAULT_FREQ), 0, 24, 24);
 
     // Neopixel setup
     neopixel_state np_state = {0};

@@ -4,11 +4,8 @@
 #pragma once
 
 #include <stdint.h>
-#ifndef __XC__
-#include <xcore/parallel.h>
-#include <xcore/channel.h>
-#include <xcore/interrupt_wrappers.h>
-#endif
+#include "i2c.h"
+#include "xua_conf.h"
 
 typedef struct control_input_t
 {
@@ -16,14 +13,14 @@ typedef struct control_input_t
 }control_input_t;
 
 #ifdef __XC__
-void control_task(chanend c_uart, chanend c_adc, control_input_t * unsafe control_input);
+
+void control_task(chanend c_uart, chanend c_adc, control_input_t * unsafe control_input, client interface i2c_master_if i_i2c);
 
 void uart_task(chanend c_uart);
-#else
 
-DECLARE_JOB(control_task, (chanend_t, chanend_t, control_input_t *));
-void control_task(chanend_t c_uart, chanend_t c_adc, control_input_t *control_input);
-
-DECLARE_JOB(INTERRUPT_PERMITTED(uart_task), (chanend_t));
-void uart_task(chanend_t c_uart);
 #endif
+
+// Calculates the expected MCLK from a given normal sample rate
+inline uint32_t get_master_clock_from_samp_rate(uint32_t sample_rate){
+    return (sample_rate % 48000 == 0) ? MCLK_48 : MCLK_441;
+}
