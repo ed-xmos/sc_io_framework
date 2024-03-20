@@ -5,7 +5,7 @@
 #include <string.h>
 #include <platform.h>
 
-#include "app_main.h"
+#include "app_config.h"
 #include "control_task.h"
 #include "neopixel.h"
 #include "adc_pot.h"
@@ -15,7 +15,6 @@
 #define VU_OFF      0x000000
 
 
-#define BAUD_RATE 115200
 
 unsafe void vu_to_pixels(control_input_t * unsafe control_input, neopixel_state &np_state){
     for(int i = 0; i < 12; i++){
@@ -60,23 +59,34 @@ void control_task(  client uart_tx_if i_uart_tx,
     const uint8_t msg[] = "Hello world!\n";
     unsigned msg_idx = 0;
 
+    // Main control super loop
     while(1){
+        // Drive VU on neopixels
         unsafe{vu_to_pixels(control_input, np_state);}
         while(!neopixel_drive_pins(np_state, p_neopixel)); // Takes about 1.2 ms for 24 neopixels
         
-        unsigned ch = 0;
-        c_adc <: (uint32_t)(ADC_CMD_READ | ch);
-        unsigned adc0;
-        c_adc :> adc0;
-        printf("ADC ch %u : %u\n", ch, adc0);
+        // Read ADCs for pot input
+        unsigned adc[NUM_ADC_POTS] = {0};
+        unsigned adc_dir[NUM_ADC_POTS] = {0};
+        printf("ADC ");
+        for(unsigned ch = 0; ch < NUM_ADC_POTS; ch++){
+            c_adc <: (uint32_t)(ADC_CMD_READ | ch);
+            c_adc :> adc[ch];
+            c_adc <: (uint32_t)(ADC_CMD_POT_GET_DIR | ch);
+            c_adc :> adc_dir[ch];
+            printf("ch %u: %u (%u) ", ch, adc[ch], adc_dir[ch]);
+        }
+        printf("\n");
 
-        // // Read buttons
-        // unsigned pb;
-        // p_buttons :> pb;
-        // if((pb & 0x1) == 0){ // Button 0
-        // }
-        // if((pb & 0x2) == 0){ // Button 1
-        // }
+        
+        // Read buttons
+        unsigned pb = i_gpio_mc_buttons.input();
+        if((pb & 0x1) == 0){ // Button 0
+        }
+
+        // Drive MC leds
+        i_gpio_mc_leds.output(pb);
+
 
         // Send a character to the UART
         i_uart_tx.write(msg[msg_idx]);
@@ -84,21 +94,7 @@ void control_task(  client uart_tx_if i_uart_tx,
             msg_idx = 0;
         }
 
-        delay_milliseconds(100);
+        delay_milliseconds(10);
     }
 }
 
-
-void uart_task(server uart_tx_if i_uart_tx, out port p_uart_tx){
-    printstrln("uart_task");
-    output_gpio_if i_gpio_tx[1];
-    char pin_map[] = {0}; // We output on bit 0 of the 4b port
-
-    [[combine]]
-    par{
-        uart_tx(i_uart_tx, null,
-                BAUD_RATE, UART_PARITY_NONE, 8, 1,
-                i_gpio_tx[0]);
-        output_gpio(i_gpio_tx, 1, p_uart_tx, pin_map);
-    }
-}

@@ -22,8 +22,6 @@ void control_task(  client uart_tx_if i_uart_tx,
                     client output_gpio_if i_gpio_mc_leds
                     );
 
-void uart_task(server uart_tx_if i_uart_tx, out port p_uart_tx);
-
 #endif
 
 // Calculates the expected MCLK from a given normal sample rate

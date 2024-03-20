@@ -5,4 +5,7 @@
 
 #pragma once
 
+#define NUM_ADC_POTS    2
+#define UART_BAUD_RATE  115200
+
 

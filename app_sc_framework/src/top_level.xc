@@ -84,9 +84,12 @@ int main() {
 
                 dsp_task_0(c_dsp);
 
-                i2c_master(i2c, 1, p_scl, p_sda, 100);
-                output_gpio(i_gpio_mc_leds, 1, p_mc_leds, null);
-                input_gpio(i_gpio_mc_buttons, 1, p_mc_buttons, null);
+                [[combine]]
+                par{
+                    i2c_master(i2c, 1, p_scl, p_sda, 100);
+                    output_gpio(i_gpio_mc_leds, 1, p_mc_leds, null);
+                    input_gpio(i_gpio_mc_buttons, 1, p_mc_buttons, null);
+                }
             }
         }
         on tile[1]: unsafe{            
@@ -109,16 +112,26 @@ int main() {
             control_input_t control_input;
             control_input_t * unsafe control_input_ptr = &control_input;
 
+            /* UART IO params */
+            output_gpio_if i_gpio_tx[1];
+            char pin_map[] = {0}; // We output on bit 0 of the 4b port
+
+
             par{
                 XUA_AudioHub(c_aud, clk_audio_mclk, clk_audio_bclk, p_mclk_in, p_lrclk, p_bclk, p_i2s_dac, p_i2s_adc);
                 dsp_task_1(c_dsp, control_input_ptr);
-                adc_pot_task(c_adc, p_adc, 1, adc_config);
+                adc_pot_task(c_adc, p_adc, NUM_ADC_POTS, adc_config);
                 control_task(i_uart_tx,
                             c_adc, control_input_ptr, 
                             p_neopixel, cb_neo,
                             i_gpio_mc_buttons[0],
                             i_gpio_mc_leds[0]);
-                uart_task(i_uart_tx, p_uart_tx);
+                [[distribute]]
+                uart_tx(i_uart_tx, null,
+                        UART_BAUD_RATE, UART_PARITY_NONE, 8, 1,
+                        i_gpio_tx[0]);
+                [[distribute]]
+                output_gpio(i_gpio_tx, 1, p_uart_tx, pin_map);
             }
         }
     }
