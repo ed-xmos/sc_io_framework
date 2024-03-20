@@ -5,6 +5,7 @@
 
 #include <stdint.h>
 #include "i2c.h"
+#include "uart.h"
 #include "xua_conf.h"
 
 typedef struct control_input_t
@@ -14,9 +15,14 @@ typedef struct control_input_t
 
 #ifdef __XC__
 
-void control_task(chanend c_uart, chanend c_adc, control_input_t * unsafe control_input);
+void control_task(  client uart_tx_if i_uart_tx,
+                    chanend c_adc, control_input_t * unsafe control_input,
+                    out buffered port:32 p_neopixel, clock cb_neo,
+                    client input_gpio_if i_gpio_mc_buttons,
+                    client output_gpio_if i_gpio_mc_leds
+                    );
 
-void uart_task(chanend c_uart);
+void uart_task(server uart_tx_if i_uart_tx, out port p_uart_tx);
 
 #endif
 

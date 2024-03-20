@@ -30,22 +30,25 @@ on tile[1]: clock clk_audio_mclk                = XS1_CLKBLK_1;
 on tile[1]: clock clk_audio_bclk                = XS1_CLKBLK_2;
 on tile[1]: port p_mclk_in                      = PORT_MCLK_IN;
 
-
 // I2C resources (defined in audiohw.c)
 extern port p_scl;
 extern port p_sda;
 
-
 // GPIO resources
-// on tile[0]: in port p_buttons =                             XS1_PORT_4E;
-// on tile[0]: out port p_leds =                               XS1_PORT_4F;
-on tile[1]: port p_adc[] = {PORT_I2S_ADC2, PORT_I2S_ADC3}; // Sets which pins are to be used (channels 0..n) // X0D00, 11;
+on tile[0]: in port p_mc_buttons                = XS1_PORT_4E;      // 3 buttons on MC board
+on tile[0]: out port p_mc_leds                  = XS1_PORT_4F;      // 4 LEDs on MC board
+on tile[1]: out buffered port:32 p_neopixel     = PORT_SPDIF_OUT;
+on tile[1]: clock cb_neo                        = XS1_CLKBLK_3;
+on tile[1]: port p_uart_tx                      = PORT_MIDI_OUT; // Bit 0
+on tile[1]: port p_adc[]                        = {PORT_I2S_ADC2, PORT_I2S_ADC3}; // Sets which pins are to be used (channels 0..n)
 
 
 int main() {
     chan c_aud;
     chan c_dsp;
     interface i2c_master_if i2c[1];
+    input_gpio_if i_gpio_mc_buttons[1];
+    output_gpio_if i_gpio_mc_leds[1];
 
     par
     {
@@ -79,14 +82,17 @@ int main() {
                 XUA_Endpoint0(c_ep_out[0], c_ep_in[0], c_aud_ctl, null, null, null, null);
                 XUA_Buffer(c_ep_out[1], c_ep_in[2], c_ep_in[1], c_sof, c_aud_ctl, p_for_mclk_count, c_aud);
 
-                i2c_master(i2c, 1, p_scl, p_sda, 100);
                 dsp_task_0(c_dsp);
+
+                i2c_master(i2c, 1, p_scl, p_sda, 100);
+                output_gpio(i_gpio_mc_leds, 1, p_mc_leds, null);
+                input_gpio(i_gpio_mc_buttons, 1, p_mc_buttons, null);
             }
         }
         on tile[1]: unsafe{            
             /* Control chans */
             chan c_adc;
-            chan c_uart;
+            interface uart_tx_if i_uart_tx;
 
             unsafe{ i_i2c_client = i2c[0];}
             AudioHwInit();
@@ -107,9 +113,12 @@ int main() {
                 XUA_AudioHub(c_aud, clk_audio_mclk, clk_audio_bclk, p_mclk_in, p_lrclk, p_bclk, p_i2s_dac, p_i2s_adc);
                 dsp_task_1(c_dsp, control_input_ptr);
                 adc_pot_task(c_adc, p_adc, 1, adc_config);
-                // {while(1){p_adc[0]<:0;p_adc[0]<:1;}}
-                control_task(c_uart, c_adc, control_input_ptr);
-                uart_task(c_uart);
+                control_task(i_uart_tx,
+                            c_adc, control_input_ptr, 
+                            p_neopixel, cb_neo,
+                            i_gpio_mc_buttons[0],
+                            i_gpio_mc_leds[0]);
+                uart_task(i_uart_tx, p_uart_tx);
             }
         }
     }

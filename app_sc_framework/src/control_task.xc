@@ -6,24 +6,13 @@
 #include <platform.h>
 
 #include "app_main.h"
-#include "i2c.h"
 #include "control_task.h"
 #include "neopixel.h"
 #include "adc_pot.h"
-#include "uart.h"
 
 #define VU_GREEN    0x000010
-#define VU_RED      0x001000
+#define VU_RED      0x002000
 #define VU_OFF      0x000000
-
-on tile[0]: port p_buttons = XS1_PORT_4D;
-on tile[1]: out buffered port:32 p_neopixel = PORT_SPDIF_OUT;
-on tile[1]: clock cb_neo = XS1_CLKBLK_3;
-on tile[1]: port p_uart_tx = PORT_MIDI_OUT; // Bit 0
-
-
-extern void codec_init(client interface i2c_master_if i_i2c);
-extern void codec_config(client interface i2c_master_if i_i2c, unsigned samFreq, unsigned mClk, unsigned dsdMode, unsigned sampRes_DAC, unsigned sampRes_ADC);
 
 
 #define BAUD_RATE 115200
@@ -53,7 +42,13 @@ unsafe void vu_to_pixels(control_input_t * unsafe control_input, neopixel_state 
     }
 }
 
-void control_task(chanend c_uart, chanend c_adc, control_input_t * unsafe control_input){
+
+void control_task(  client uart_tx_if i_uart_tx,
+                    chanend c_adc, control_input_t * unsafe control_input,
+                    out buffered port:32 p_neopixel, clock cb_neo,
+                    client input_gpio_if i_gpio_mc_buttons,
+                    client output_gpio_if i_gpio_mc_leds
+                    ){
     printf("control_task\n");
 
     // Neopixel setup
@@ -84,7 +79,7 @@ void control_task(chanend c_uart, chanend c_adc, control_input_t * unsafe contro
         // }
 
         // Send a character to the UART
-        c_uart <: msg[msg_idx];
+        i_uart_tx.write(msg[msg_idx]);
         if(++msg_idx == strlen((const char*)msg)){
             msg_idx = 0;
         }
@@ -93,21 +88,9 @@ void control_task(chanend c_uart, chanend c_adc, control_input_t * unsafe contro
     }
 }
 
-[[combinable]]
-void uart_relay(chanend c_uart, client uart_tx_if i_uart_tx){
-    uint8_t ch = 0;
-    while(1){
-        select{
-            case c_uart :> ch:
-                i_uart_tx.write(ch);
-            break;
-        }
-    }
-}
 
-void uart_task(chanend c_uart){
+void uart_task(server uart_tx_if i_uart_tx, out port p_uart_tx){
     printstrln("uart_task");
-    interface uart_tx_if i_uart_tx;
     output_gpio_if i_gpio_tx[1];
     char pin_map[] = {0}; // We output on bit 0 of the 4b port
 
@@ -117,6 +100,5 @@ void uart_task(chanend c_uart){
                 BAUD_RATE, UART_PARITY_NONE, 8, 1,
                 i_gpio_tx[0]);
         output_gpio(i_gpio_tx, 1, p_uart_tx, pin_map);
-        uart_relay(c_uart, i_uart_tx);
     }
 }

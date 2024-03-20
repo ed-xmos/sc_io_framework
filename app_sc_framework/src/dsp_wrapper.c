@@ -63,7 +63,7 @@ void dsp_task_1(chanend_t c_dsp, control_input_t *control_input){
         // Wait until samples have been populated by UserBufferManagement
         chan_in_word(c_dsp_synch.end_a);
 
-        process_vu(samples_from_host_g, NUM_USB_CHAN_OUT, vu_state);
+        process_vu((int32_t *)samples_from_host_g, NUM_USB_CHAN_OUT, vu_state);
 
         control_input->vu[0] = vu_state[0].vu;
         control_input->vu[1] = vu_state[1].vu;
