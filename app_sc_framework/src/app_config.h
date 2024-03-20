@@ -5,5 +5,4 @@
 
 #pragma once
 
-#define USB_MCLK_COUNT_CLK_BLK  XS1_CLKBLK_2
 

@@ -15,6 +15,28 @@ typedef struct vu_state_t{
 
 #define ABS(x) ((x)<0 ? (-x) : (x))
 
+volatile chanend_t c_dsp_synch_end = 0;
+
+volatile int32_t samples_from_host_g[NUM_USB_CHAN_OUT] = {0};
+volatile int32_t samples_to_host_g[NUM_USB_CHAN_IN] = {0};
+
+void UserBufferManagementInit(unsigned sampFreq)
+{
+    printstrln("UserBufferManagementInit");
+    while(c_dsp_synch_end == 0){
+        // Wait for valid chanend
+    }
+}
+
+void UserBufferManagement(unsigned sampsFromUsbToAudio[], unsigned sampsFromAudioToUsb[]){
+
+    for(int i = 0; i < NUM_USB_CHAN_OUT; i++){
+        samples_from_host_g[i] = sampsFromUsbToAudio[i];
+    }
+    chan_out_word(c_dsp_synch_end, 0);
+}
+
+
 // Quick and dirty VU
 void process_vu(int32_t *samples, size_t n_ch, vu_state_t vu_state[NUM_USB_CHAN_OUT]){
     for(int ch = 0; ch < n_ch; ch++){
@@ -29,53 +51,22 @@ void process_vu(int32_t *samples, size_t n_ch, vu_state_t vu_state[NUM_USB_CHAN_
     }
 }
 
-void dsp_task_0(chanend_t c_dsp, control_input_t *control_input){
-    printstr("dsp_task_0\n");
-
-    vu_state_t vu_state[NUM_USB_CHAN_OUT] = {{0}};
-
-    int32_t samples_from_host[NUM_USB_CHAN_OUT] = {0};
-    int32_t samples_to_host[NUM_USB_CHAN_IN] = {0};
-    while(1){
-        transacting_chanend_t tc = chan_init_transaction_slave(c_dsp);
-        size_t n_ch = t_chan_in_word(&tc);
-        t_chan_in_buf_word(&tc, (uint32_t*)samples_from_host, n_ch);
-        t_chan_out_buf_word(&tc, (uint32_t*)samples_to_host, n_ch);
-        c_dsp = chan_complete_transaction(tc);
-
-        process_vu(samples_from_host, n_ch, vu_state);
-
-        control_input->vu[0] = vu_state[0].vu;
-        control_input->vu[1] = vu_state[1].vu;
-    }
-}
-
-volatile chanend_t c_dsp_synch_end = 0;
-volatile int32_t samples_from_host_g[NUM_USB_CHAN_OUT] = {0};
-volatile int32_t samples_to_host_g[NUM_USB_CHAN_IN] = {0};
-
-void UserBufferManagementInit(unsigned sampFreq)
-{
-    while(c_dsp_synch_end == 0){
-        // Wait for valid chanend
-    }
-}
-
-void UserBufferManagement(unsigned sampsFromUsbToAudio[], unsigned sampsFromAudioToUsb[]){
-    for(int i = 0; i < NUM_USB_CHAN_OUT; i++){
-        samples_from_host_g[i] = sampsFromUsbToAudio[i];
-    }
-    chan_out_word(c_dsp_synch_end, 0);
-}
-
-
-void dsp_task_1(chanend_t c_dsp){
+void dsp_task_1(chanend_t c_dsp, control_input_t *control_input){
     printstr("dsp_task_1\n");
     channel_t c_dsp_synch = chan_alloc();
     c_dsp_synch_end = c_dsp_synch.end_b;
+
+    vu_state_t vu_state[NUM_USB_CHAN_OUT] = {{0}};
+
+
     while(1){
         // Wait until samples have been populated by UserBufferManagement
         chan_in_word(c_dsp_synch.end_a);
+
+        process_vu(samples_from_host_g, NUM_USB_CHAN_OUT, vu_state);
+
+        control_input->vu[0] = vu_state[0].vu;
+        control_input->vu[1] = vu_state[1].vu;
 
         // Now send them to dsp_task_0
         transacting_chanend_t tc = chan_init_transaction_master(c_dsp);
@@ -83,6 +74,24 @@ void dsp_task_1(chanend_t c_dsp){
         t_chan_out_buf_word(&tc, (uint32_t*)samples_from_host_g, NUM_USB_CHAN_OUT);
         t_chan_in_buf_word(&tc, (uint32_t*)samples_to_host_g, NUM_USB_CHAN_IN);
         c_dsp = chan_complete_transaction(tc);
-        (void)samples_from_host_g[0]; // TODO this seems to be needed to force samples_from_host_g to be volatile
+        // (void)samples_from_host_g[0]; // TODO this seems to be needed to force samples_from_host_g to be volatile
+
+    }
+}
+
+
+
+void dsp_task_0(chanend_t c_dsp){
+    printstr("dsp_task_0\n");
+
+    int32_t samples_from_host[NUM_USB_CHAN_OUT] = {0};
+    int32_t samples_to_host[NUM_USB_CHAN_IN] = {0};
+
+    while(1){
+        transacting_chanend_t tc = chan_init_transaction_slave(c_dsp);
+        size_t n_ch = t_chan_in_word(&tc);
+        t_chan_in_buf_word(&tc, (uint32_t*)samples_from_host, n_ch);
+        t_chan_out_buf_word(&tc, (uint32_t*)samples_to_host, n_ch);
+        c_dsp = chan_complete_transaction(tc);
     }
 }

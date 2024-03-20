@@ -19,11 +19,11 @@ extern "C"{
 
 // Audio resources for USB and I2S
 on tile[0]: port p_for_mclk_count = XS1_PORT_16B;
-on tile[0]: port p_for_mclk_in = WIFI_CLK;
-on tile[0]: clock usb_mclk_in_clk = USB_MCLK_COUNT_CLK_BLK;
+on tile[0]: port p_for_mclk_in = XS1_PORT_1D;
+on tile[0]: clock usb_mclk_in_clk = XS1_CLKBLK_2;
 
-on tile[1]: buffered out port:32 p_i2s_dac[]    = {PORT_I2S_DAC_DATA};   /* I2S Data-line(s) */
-on tile[1]: buffered in port:32 p_i2s_adc[]     = {PORT_I2S_ADC_DATA};   /* I2S Data-line(s) */
+on tile[1]: buffered out port:32 p_i2s_dac[]    = {PORT_I2S_DAC0};   /* I2S Data-line(s) */
+on tile[1]: buffered in port:32 p_i2s_adc[]     = {PORT_I2S_ADC0};   /* I2S Data-line(s) */
 on tile[1]: buffered out port:32 p_lrclk        = PORT_I2S_LRCLK;    /* I2S Bit-clock */
 on tile[1]: buffered out port:32 p_bclk         = PORT_I2S_BCLK;     /* I2S L/R-clock */
 on tile[1]: clock clk_audio_mclk                = XS1_CLKBLK_1;
@@ -35,32 +35,22 @@ on tile[1]: port p_mclk_in                      = PORT_MCLK_IN;
 extern port p_scl;
 extern port p_sda;
 
-#define CODEC_RELEASE_RESET             (0x8) // Release codec from
-on tile[1]: out port p_codec_reset  = PORT_CODEC_RST_N;
-
 
 // GPIO resources
 // on tile[0]: in port p_buttons =                             XS1_PORT_4E;
 // on tile[0]: out port p_leds =                               XS1_PORT_4F;
-on tile[0]: port p_adc[] = {XS1_PORT_1A, XS1_PORT_1D}; // Sets which pins are to be used (channels 0..n) // X0D00, 11;
-
-
-extern void board_setup(void);
+on tile[1]: port p_adc[] = {PORT_I2S_ADC2, PORT_I2S_ADC3}; // Sets which pins are to be used (channels 0..n) // X0D00, 11;
 
 
 int main() {
     chan c_aud;
-    chan c_uart;
     chan c_dsp;
+    interface i2c_master_if i2c[1];
 
     par
     {
-        on tile[0]:unsafe{
+        on tile[0]:{
             board_setup();
-            delay_milliseconds(100);
-
-            /* Control chans */
-            chan c_adc;
 
             /* XUA chans */
             chan c_ep_out[2];
@@ -77,20 +67,10 @@ int main() {
             set_port_clock(p_for_mclk_count, usb_mclk_in_clk);       /* Clock the "count" port from the clock block */
             start_clock(usb_mclk_in_clk);                            /* Set the clock off running */
 
-            /* Memory shared by dsp_task_0 and read by control_task */
-            control_input_t control_input;
-            control_input_t * unsafe control_input_ptr = &control_input;
 
-            /* Quasi-ADC setup parameters */
-            const unsigned capacitor_pf = 4000;
-            const unsigned resistor_ohms = 47000; // nominal maximum value ned to end
-            const unsigned resistor_series_ohms = 470;
-            const float v_rail = 3.3;
-            const float v_thresh = 1.14;
-            const adc_pot_config_t adc_config = {capacitor_pf, resistor_ohms, resistor_series_ohms, v_rail, v_thresh};
 
             /* I2C setup */
-            interface i2c_master_if i2c[1];
+
 
             par{
                 XUD_Main(c_ep_out, 2, c_ep_in, 3,
@@ -99,18 +79,36 @@ int main() {
                 XUA_Endpoint0(c_ep_out[0], c_ep_in[0], c_aud_ctl, null, null, null, null);
                 XUA_Buffer(c_ep_out[1], c_ep_in[2], c_ep_in[1], c_sof, c_aud_ctl, p_for_mclk_count, c_aud);
 
-                adc_pot_task(c_adc, p_adc, 1, adc_config);
-                control_task(c_uart, c_adc, control_input_ptr, i2c[0]);
                 i2c_master(i2c, 1, p_scl, p_sda, 100);
-                dsp_task_0(c_dsp, control_input_ptr);
+                dsp_task_0(c_dsp);
             }
         }
-        on tile[1]: {
-            p_codec_reset <: CODEC_RELEASE_RESET;
+        on tile[1]: unsafe{            
+            /* Control chans */
+            chan c_adc;
+            chan c_uart;
+
+            unsafe{ i_i2c_client = i2c[0];}
+            AudioHwInit();
+
+            /* Quasi-ADC setup parameters */
+            const unsigned capacitor_pf = 8800;
+            const unsigned resistor_ohms = 10000; // nominal maximum value ned to end
+            const unsigned resistor_series_ohms = 220;
+            const float v_rail = 3.3;
+            const float v_thresh = 1.14;
+            const adc_pot_config_t adc_config = {capacitor_pf, resistor_ohms, resistor_series_ohms, v_rail, v_thresh};
+
+            /* Memory shared by dsp_task_1 and read by control_task */
+            control_input_t control_input;
+            control_input_t * unsafe control_input_ptr = &control_input;
 
             par{
                 XUA_AudioHub(c_aud, clk_audio_mclk, clk_audio_bclk, p_mclk_in, p_lrclk, p_bclk, p_i2s_dac, p_i2s_adc);
-                dsp_task_1(c_dsp);
+                dsp_task_1(c_dsp, control_input_ptr);
+                adc_pot_task(c_adc, p_adc, 1, adc_config);
+                // {while(1){p_adc[0]<:0;p_adc[0]<:1;}}
+                control_task(c_uart, c_adc, control_input_ptr);
                 uart_task(c_uart);
             }
         }

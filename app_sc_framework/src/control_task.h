@@ -14,7 +14,7 @@ typedef struct control_input_t
 
 #ifdef __XC__
 
-void control_task(chanend c_uart, chanend c_adc, control_input_t * unsafe control_input, client interface i2c_master_if i_i2c);
+void control_task(chanend c_uart, chanend c_adc, control_input_t * unsafe control_input);
 
 void uart_task(chanend c_uart);
 

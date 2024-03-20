@@ -17,10 +17,9 @@
 #define VU_OFF      0x000000
 
 on tile[0]: port p_buttons = XS1_PORT_4D;
-on tile[0]: port p_wifi_ctl = XS1_PORT_4F;
-on tile[0]: out buffered port:32 p_neopixel = WIFI_MISO;
-on tile[0]: clock cb_neo = XS1_CLKBLK_3;
-on tile[1]: port p_uart_tx = XS1_PORT_4B; // Bit 2 X1D06
+on tile[1]: out buffered port:32 p_neopixel = PORT_SPDIF_OUT;
+on tile[1]: clock cb_neo = XS1_CLKBLK_3;
+on tile[1]: port p_uart_tx = PORT_MIDI_OUT; // Bit 0
 
 
 extern void codec_init(client interface i2c_master_if i_i2c);
@@ -54,12 +53,8 @@ unsafe void vu_to_pixels(control_input_t * unsafe control_input, neopixel_state 
     }
 }
 
-void control_task(chanend c_uart, chanend c_adc, control_input_t * unsafe control_input, client interface i2c_master_if i_i2c){
+void control_task(chanend c_uart, chanend c_adc, control_input_t * unsafe control_input){
     printf("control_task\n");
-
-    // Initial audio HW setup
-    codec_init(i_i2c);
-    codec_config(i_i2c, DEFAULT_FREQ, get_master_clock_from_samp_rate(DEFAULT_FREQ), 0, 24, 24);
 
     // Neopixel setup
     neopixel_state np_state = {0};
@@ -80,13 +75,13 @@ void control_task(chanend c_uart, chanend c_adc, control_input_t * unsafe contro
         c_adc :> adc0;
         printf("ADC ch %u : %u\n", ch, adc0);
 
-        // Read buttons
-        unsigned pb;
-        p_buttons :> pb;
-        if((pb & 0x1) == 0){ // Button 0
-        }
-        if((pb & 0x2) == 0){ // Button 1
-        }
+        // // Read buttons
+        // unsigned pb;
+        // p_buttons :> pb;
+        // if((pb & 0x1) == 0){ // Button 0
+        // }
+        // if((pb & 0x2) == 0){ // Button 1
+        // }
 
         // Send a character to the UART
         c_uart <: msg[msg_idx];
@@ -114,7 +109,7 @@ void uart_task(chanend c_uart){
     printstrln("uart_task");
     interface uart_tx_if i_uart_tx;
     output_gpio_if i_gpio_tx[1];
-    char pin_map[] = {2}; // We output on bit 2 of the 4b port
+    char pin_map[] = {0}; // We output on bit 0 of the 4b port
 
     [[combine]]
     par{
