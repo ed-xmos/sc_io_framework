@@ -1,6 +1,0 @@
-[submodule "lib_neopixel"]
-	path = lib_neopixel
-	url = git@github.com:xmos/lib_neopixel.git
-[submodule "lib_uart"]
-	path = lib_uart
-	url = git@github.com:xmos/lib_uart.git
