@@ -19,6 +19,7 @@ volatile chanend_t c_dsp_synch_end = 0;
 
 volatile int32_t samples_from_host_g[NUM_USB_CHAN_OUT] = {0};
 volatile int32_t samples_to_host_g[NUM_USB_CHAN_IN] = {0};
+volatile int32_t output_gain_g[NUM_USB_CHAN_OUT];
 
 void UserBufferManagementInit(unsigned sampFreq)
 {
@@ -32,6 +33,7 @@ void UserBufferManagement(unsigned sampsFromUsbToAudio[], unsigned sampsFromAudi
 
     for(int i = 0; i < NUM_USB_CHAN_OUT; i++){
         samples_from_host_g[i] = sampsFromUsbToAudio[i];
+        sampsFromUsbToAudio[i] = ((int64_t)samples_from_host_g[i] * (int64_t)output_gain_g[i]) >> 31;
     }
     chan_out_word(c_dsp_synch_end, 0);
 }
@@ -67,6 +69,8 @@ void dsp_task_1(chanend_t c_dsp, control_input_t *control_input){
 
         control_input->vu[0] = vu_state[0].vu;
         control_input->vu[1] = vu_state[1].vu;
+        output_gain_g[0] = control_input->output_gain[0];
+        output_gain_g[1] = control_input->output_gain[1];
 
         // Now send them to dsp_task_0
         transacting_chanend_t tc = chan_init_transaction_master(c_dsp);
@@ -74,7 +78,6 @@ void dsp_task_1(chanend_t c_dsp, control_input_t *control_input){
         t_chan_out_buf_word(&tc, (uint32_t*)samples_from_host_g, NUM_USB_CHAN_OUT);
         t_chan_in_buf_word(&tc, (uint32_t*)samples_to_host_g, NUM_USB_CHAN_IN);
         c_dsp = chan_complete_transaction(tc);
-        // (void)samples_from_host_g[0]; // TODO this seems to be needed to force samples_from_host_g to be volatile
 
     }
 }

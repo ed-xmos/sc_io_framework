@@ -5,7 +5,11 @@
 
 #pragma once
 
-#define NUM_ADC_POTS    2
+#define NUM_ADC_POTS        2
+#define ADC_LUT_SIZE        1024
+#define ADC_FILTER_DEPTH    32 
+#define ADC_HYSTERESIS      3
+
 #define UART_BAUD_RATE  115200
 
 

@@ -10,7 +10,8 @@
 
 typedef struct control_input_t
 {
-    uint32_t vu[2];
+    uint32_t vu[NUM_USB_CHAN_OUT];
+    int32_t output_gain[NUM_USB_CHAN_OUT];
 }control_input_t;
 
 #ifdef __XC__

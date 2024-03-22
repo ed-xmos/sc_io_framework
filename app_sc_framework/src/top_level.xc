@@ -102,11 +102,19 @@ int main() {
 
             /* Quasi-ADC setup parameters */
             const unsigned capacitor_pf = 8800;
-            const unsigned resistor_ohms = 10000; // nominal maximum value ned to end
+            const unsigned potentiometer_ohms = 10000; // nominal maximum value ned to end
             const unsigned resistor_series_ohms = 220;
             const float v_rail = 3.3;
             const float v_thresh = 1.14;
-            const adc_pot_config_t adc_config = {capacitor_pf, resistor_ohms, resistor_series_ohms, v_rail, v_thresh};
+            const unsigned convert_interval_ticks = 1 * XS1_TIMER_KHZ;
+            const uint8_t auto_scale = 0;
+            const adc_pot_config_t adc_config = {capacitor_pf,
+                                                potentiometer_ohms,
+                                                resistor_series_ohms,
+                                                v_rail,
+                                                v_thresh,
+                                                convert_interval_ticks,
+                                                auto_scale};
 
             /* Memory shared by dsp_task_1 and read by control_task */
             control_input_t control_input;
@@ -117,10 +125,14 @@ int main() {
             char pin_map[] = {0}; // We output on bit 0 of the 4b port
 
 
+            adc_pot_state_t adc_pot_state;
+            uint16_t state_buffer[ADC_POT_STATE_SIZE(NUM_ADC_POTS, ADC_LUT_SIZE, ADC_FILTER_DEPTH)];
+            adc_pot_init(NUM_ADC_POTS, ADC_LUT_SIZE, ADC_FILTER_DEPTH, ADC_HYSTERESIS, state_buffer, adc_config, adc_pot_state);
+
             par{
                 XUA_AudioHub(c_aud, clk_audio_mclk, clk_audio_bclk, p_mclk_in, p_lrclk, p_bclk, p_i2s_dac, p_i2s_adc);
                 dsp_task_1(c_dsp, control_input_ptr);
-                adc_pot_task(c_adc, p_adc, NUM_ADC_POTS, adc_config);
+                adc_pot_task(c_adc, p_adc, adc_pot_state);
                 control_task(i_uart_tx,
                             c_adc, control_input_ptr, 
                             p_neopixel, cb_neo,

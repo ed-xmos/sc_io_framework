@@ -60,9 +60,9 @@ void control_task(  client uart_tx_if i_uart_tx,
     unsigned msg_idx = 0;
 
     // Main control super loop
-    while(1){
+    while(1)unsafe{
         // Drive VU on neopixels
-        unsafe{vu_to_pixels(control_input, np_state);}
+        vu_to_pixels(control_input, np_state);
         while(!neopixel_drive_pins(np_state, p_neopixel)); // Takes about 1.2 ms for 24 neopixels
         
         // Read ADCs for pot input
@@ -75,6 +75,7 @@ void control_task(  client uart_tx_if i_uart_tx,
             c_adc <: (uint32_t)(ADC_CMD_POT_GET_DIR | ch);
             c_adc :> adc_dir[ch];
             printf("ch %u: %u (%u) ", ch, adc[ch], adc_dir[ch]);
+            control_input->output_gain[ch] = (int64_t)adc[ch] * (int64_t)INT_MAX / (ADC_LUT_SIZE - 1);
         }
         printf("\n");
 
