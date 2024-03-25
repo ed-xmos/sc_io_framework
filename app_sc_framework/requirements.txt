@@ -1,0 +1,4 @@
+# python_version 3.10
+# pip_version 23.*
+-e ../lib_audio_dsp/python
+notebook

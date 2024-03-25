@@ -20,4 +20,5 @@ void app_dsp_sink(REFERENCE_PARAM(int32_t, data));
 void app_dsp_main(chanend c_control);
 
 
+void app_dsp_main_local_control(void);
 

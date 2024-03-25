@@ -14,8 +14,6 @@
 #define VU_RED      0x002000
 #define VU_OFF      0x000000
 
-
-
 unsafe void vu_to_pixels(control_input_t * unsafe control_input, neopixel_state &np_state){
     for(int i = 0; i < 12; i++){
         int32_t threshold = 1 << (2 * i + 7);
@@ -46,8 +44,7 @@ void gpio_control_task( client uart_tx_if i_uart_tx,
                         chanend c_adc, control_input_t * unsafe control_input,
                         out buffered port:32 p_neopixel, clock cb_neo,
                         client input_gpio_if i_gpio_mc_buttons,
-                        client output_gpio_if i_gpio_mc_leds,
-                        chanend c_dsp_control
+                        client output_gpio_if i_gpio_mc_leds
                         ){
     printf("gpio_control_task\n");
 
@@ -83,7 +80,8 @@ void gpio_control_task( client uart_tx_if i_uart_tx,
         
         // Read buttons
         unsigned pb = i_gpio_mc_buttons.input();
-        if((pb & 0x1) == 0){ // Button 0
+        if((pb & 0x1) == 0){ // Button 0 pressed
+            set_biquad_left_shift(adc[0]);
         }
 
         // Drive MC leds

@@ -10,7 +10,8 @@
 #include <stages/adsp_pipeline.h>
 #include "adsp_generated_auto.h"
 
-static adsp_pipeline_t * m_dsp;
+// static adsp_pipeline_t * m_dsp;
+adsp_pipeline_t * m_dsp;
 
 // send data to dsp
 void app_dsp_source(REFERENCE_PARAM(int32_t, data)) {
@@ -46,3 +47,8 @@ void app_dsp_main(chanend_t c_control) {
     );
 }
 
+// do dsp
+void app_dsp_main_local_control(void) {
+    m_dsp = adsp_auto_pipeline_init();
+    adsp_auto_pipeline_main(m_dsp);
+}

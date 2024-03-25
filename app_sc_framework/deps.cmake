@@ -4,6 +4,7 @@ set(APP_DEPENDENT_MODULES   lib_i2c
                             lib_xassert
                             "lib_xcore_math(xcommon_cmake)"
                             lib_xua
+                            lib_audio_dsp
                             )
 
 include(FetchContent)
@@ -46,14 +47,4 @@ if(NOT EXISTS ${XMOS_SANDBOX_DIR}/lib_neopixel)
         SOURCE_DIR ${XMOS_SANDBOX_DIR}/lib_neopixel
     )
     FetchContent_Populate(lib_neopixel)
-endif()
-
-if(NOT EXISTS ${XMOS_SANDBOX_DIR}/lib_audio_dsp)
-    FetchContent_Declare(
-        lib_audio_dsp
-        GIT_REPOSITORY git@github.com:xmos/lib_audio_dsp
-        GIT_TAG develop
-        SOURCE_DIR ${XMOS_SANDBOX_DIR}/lib_audio_dsp
-    )
-    FetchContent_Populate(lib_audio_dsp)
 endif()

@@ -20,7 +20,8 @@ void gpio_control_task( client uart_tx_if i_uart_tx,
                         chanend c_adc, control_input_t * unsafe control_input,
                         out buffered port:32 p_neopixel, clock cb_neo,
                         client input_gpio_if i_gpio_mc_buttons,
-                        client output_gpio_if i_gpio_mc_leds,
-                        chanend c_dsp_control
+                        client output_gpio_if i_gpio_mc_leds
                         );
 #endif
+
+void set_biquad_left_shift(int32_t bp);

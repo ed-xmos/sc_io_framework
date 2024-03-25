@@ -30,6 +30,7 @@ set(APP_C_SRCS          ../lib_neopixel/lib_neopixel/src/neopixel.xc
                         ../sw_usb_audio/app_usb_aud_xk_316_mc/src/extensions/audiohw.xc
                         
                         src/dsp_wrapper.c
+                        src/gpio_control_task.c
                         src/audio_dsp/app_dsp.c
                         src/audio_dsp/dspt_control.c
                         src/audio_dsp/dsp_pipeline/adsp_generated_auto.c
@@ -43,6 +44,7 @@ set(APP_INCLUDES        ../sw_usb_audio/app_usb_aud_xk_316_mc/src
                         ../lib_uart/lib_uart/src
                         ../lib_gpio/lib_gpio/api
                         
+                        ../lib_audio_dsp/lib_audio_dsp/api/stages
                         ../lib_audio_dsp/lib_audio_dsp/api
                         src/
                         src/audio_dsp

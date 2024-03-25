@@ -95,7 +95,6 @@ int main() {
         on tile[1]: unsafe{            
             // Local comms
             chan c_adc;
-            chan c_dsp_control;
             interface uart_tx_if i_uart_tx;
 
             unsafe{ i_i2c_client = i2c[0];}
@@ -138,10 +137,9 @@ int main() {
                                     c_adc, control_input_ptr, 
                                     p_neopixel, cb_neo,
                                     i_gpio_mc_buttons[0],
-                                    i_gpio_mc_leds[0],
-                                    c_dsp_control);
+                                    i_gpio_mc_leds[0]);
 
-                app_dsp_main(c_dsp_control);
+                app_dsp_main_local_control();
 
                 [[distribute]]
                 uart_tx(i_uart_tx, null,
