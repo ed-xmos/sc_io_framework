@@ -6,7 +6,7 @@
 
 #include "app_config.h"
 #include "adc_pot.h"
-#include "control_task.h"
+#include "gpio_control_task.h"
 #include "dsp_wrapper.h"
 #include "xua_conf.h"
 extern "C"{
@@ -95,7 +95,7 @@ int main() {
         on tile[1]: unsafe{            
             // Local comms
             chan c_adc;
-            chan c_control;
+            chan c_dsp_control;
             interface uart_tx_if i_uart_tx;
 
             unsafe{ i_i2c_client = i2c[0];}
@@ -134,11 +134,15 @@ int main() {
                 XUA_AudioHub(c_aud, clk_audio_mclk, clk_audio_bclk, p_mclk_in, p_lrclk, p_bclk, p_i2s_dac, p_i2s_adc);
                 dsp_task_1(c_dsp, control_input_ptr);
                 adc_pot_task(c_adc, p_adc, adc_pot_state);
-                control_task(i_uart_tx,
-                            c_adc, control_input_ptr, 
-                            p_neopixel, cb_neo,
-                            i_gpio_mc_buttons[0],
-                            i_gpio_mc_leds[0]);
+                gpio_control_task(  i_uart_tx,
+                                    c_adc, control_input_ptr, 
+                                    p_neopixel, cb_neo,
+                                    i_gpio_mc_buttons[0],
+                                    i_gpio_mc_leds[0],
+                                    c_dsp_control);
+
+                app_dsp_main(c_dsp_control);
+
                 [[distribute]]
                 uart_tx(i_uart_tx, null,
                         UART_BAUD_RATE, UART_PARITY_NONE, 8, 1,
@@ -146,7 +150,6 @@ int main() {
                 [[distribute]]
                 output_gpio(i_gpio_tx, 1, p_uart_tx, pin_map);
 
-                app_dsp_main(c_control);
 
             }
         }

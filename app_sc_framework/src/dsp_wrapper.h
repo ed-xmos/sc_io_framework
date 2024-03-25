@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "control_task.h"
+#include "gpio_control_task.h"
 
 #ifdef __XC__
 void dsp_task_0(chanend c_dsp_0);

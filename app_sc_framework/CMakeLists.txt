@@ -27,7 +27,6 @@ list(TRANSFORM LIB_ADSP_STAGES PREPEND ../../../../..)
 set(APP_C_SRCS          ../lib_neopixel/lib_neopixel/src/neopixel.xc
                         ../lib_uart/lib_uart/src/uart_tx.xc
                         ../lib_gpio/lib_gpio/src/gpio.xc
-                        ../lib_gpio/lib_gpio/src/gpio.xc
                         ../sw_usb_audio/app_usb_aud_xk_316_mc/src/extensions/audiohw.xc
                         
                         src/dsp_wrapper.c

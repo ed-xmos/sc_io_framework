@@ -6,7 +6,7 @@
 #include <platform.h>
 
 #include "app_config.h"
-#include "control_task.h"
+#include "gpio_control_task.h"
 #include "neopixel.h"
 #include "adc_pot.h"
 
@@ -42,13 +42,14 @@ unsafe void vu_to_pixels(control_input_t * unsafe control_input, neopixel_state 
 }
 
 
-void control_task(  client uart_tx_if i_uart_tx,
-                    chanend c_adc, control_input_t * unsafe control_input,
-                    out buffered port:32 p_neopixel, clock cb_neo,
-                    client input_gpio_if i_gpio_mc_buttons,
-                    client output_gpio_if i_gpio_mc_leds
-                    ){
-    printf("control_task\n");
+void gpio_control_task( client uart_tx_if i_uart_tx,
+                        chanend c_adc, control_input_t * unsafe control_input,
+                        out buffered port:32 p_neopixel, clock cb_neo,
+                        client input_gpio_if i_gpio_mc_buttons,
+                        client output_gpio_if i_gpio_mc_leds,
+                        chanend c_dsp_control
+                        ){
+    printf("gpio_control_task\n");
 
     // Neopixel setup
     neopixel_state np_state = {0};
