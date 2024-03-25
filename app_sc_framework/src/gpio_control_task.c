@@ -9,6 +9,7 @@
 #include "adsp_module.h"
 #include "adsp_control.h"
 #include "cmds.h"
+#include "adsp.h"
 
 
 extern adsp_pipeline_t * m_dsp;
@@ -18,13 +19,14 @@ extern adsp_pipeline_t * m_dsp;
 
 
 void set_volume(int32_t vol){
-
+    int32_t volume_shift = -SIG_EXP - 10; // 10 bit ADC 
+    vol <<= volume_shift;
 
     printf("vol: %ld\n", vol);
 
     adsp_stage_control_cmd_t cmd;
 
-    cmd.instance_id = 3; // VOLUME
+    cmd.instance_id = 2; // VOLUME
     const unsigned NUM_VALUES_VOLUME = 1;
     const unsigned TYPE_INT32 = 4;
     const unsigned len = NUM_VALUES_VOLUME * TYPE_INT32;

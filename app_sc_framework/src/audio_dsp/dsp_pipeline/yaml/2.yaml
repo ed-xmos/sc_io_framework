@@ -1,14 +1,15 @@
-name: cascaded_biquads
+name: volume_control
 yaml_dict:
   includes:
   - stdint.h
   - stages/adsp_module.h
   module:
-    cascaded_biquads:
-      filter_coeffs:
-        attribute: DWORD_ALIGNED
-        size: 40
+    volume_control:
+      gain:
         type: int32_t
-      left_shift:
-        size: 8
-        type: int
+      mute:
+        type: uint8_t
+      slew_shift:
+        type: int32_t
+      target_gain:
+        type: int32_t

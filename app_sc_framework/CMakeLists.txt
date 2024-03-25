@@ -43,9 +43,10 @@ set(APP_INCLUDES        ../sw_usb_audio/app_usb_aud_xk_316_mc/src
                         ../lib_uart/lib_uart/api
                         ../lib_uart/lib_uart/src
                         ../lib_gpio/lib_gpio/api
-                        
+
+                        ../lib_audio_dsp/lib_audio_dsp/api                        
+                        ../lib_audio_dsp/lib_audio_dsp/api/dsp
                         ../lib_audio_dsp/lib_audio_dsp/api/stages
-                        ../lib_audio_dsp/lib_audio_dsp/api
                         src/
                         src/audio_dsp
                         src/audio_dsp/dsp_pipeline
