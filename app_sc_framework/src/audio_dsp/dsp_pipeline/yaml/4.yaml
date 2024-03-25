@@ -1,0 +1,16 @@
+name: biquad
+yaml_dict:
+  includes:
+  - stdint.h
+  - stages/adsp_module.h
+  module:
+    biquad:
+      filter_coeffs:
+        attribute: DWORD_ALIGNED
+        size: 5
+        type: int32_t
+      left_shift:
+        type: int
+      reserved:
+        size: 3
+        type: int32_t

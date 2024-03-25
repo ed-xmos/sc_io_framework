@@ -16,6 +16,8 @@ extern "C"{
 #include "xua_conf.h"
 #include "xua.h"
 #include "xud.h"
+#include "app_dsp.h"
+
 
 // Audio resources for USB and I2S
 on tile[0]: port p_for_mclk_count = XS1_PORT_16B;
@@ -44,6 +46,7 @@ on tile[1]: port p_adc[]                        = {PORT_I2S_ADC2, PORT_I2S_ADC3}
 
 
 int main() {
+    // Cross tile comms
     chan c_aud;
     chan c_dsp;
     interface i2c_master_if i2c[1];
@@ -72,9 +75,6 @@ int main() {
 
 
 
-            /* I2C setup */
-
-
             par{
                 XUD_Main(c_ep_out, 2, c_ep_in, 3,
                      c_sof, epTypeTableOut, epTypeTableIn, 
@@ -93,8 +93,9 @@ int main() {
             }
         }
         on tile[1]: unsafe{            
-            /* Control chans */
+            // Local comms
             chan c_adc;
+            chan c_control;
             interface uart_tx_if i_uart_tx;
 
             unsafe{ i_i2c_client = i2c[0];}
@@ -144,6 +145,9 @@ int main() {
                         i_gpio_tx[0]);
                 [[distribute]]
                 output_gpio(i_gpio_tx, 1, p_uart_tx, pin_map);
+
+                app_dsp_main(c_control);
+
             }
         }
     }

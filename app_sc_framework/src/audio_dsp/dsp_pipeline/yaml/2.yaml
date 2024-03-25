@@ -1,0 +1,14 @@
+name: cascaded_biquads
+yaml_dict:
+  includes:
+  - stdint.h
+  - stages/adsp_module.h
+  module:
+    cascaded_biquads:
+      filter_coeffs:
+        attribute: DWORD_ALIGNED
+        size: 40
+        type: int32_t
+      left_shift:
+        size: 8
+        type: int

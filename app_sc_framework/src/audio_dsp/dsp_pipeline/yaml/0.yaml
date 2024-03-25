@@ -1,0 +1,9 @@
+name: pipeline
+yaml_dict:
+  includes:
+  - stdint.h
+  module:
+    pipeline:
+      checksum:
+        size: 16
+        type: uint8_t

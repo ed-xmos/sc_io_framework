@@ -22,10 +22,4 @@ void control_task(  client uart_tx_if i_uart_tx,
                     client input_gpio_if i_gpio_mc_buttons,
                     client output_gpio_if i_gpio_mc_leds
                     );
-
 #endif
-
-// Calculates the expected MCLK from a given normal sample rate
-inline uint32_t get_master_clock_from_samp_rate(uint32_t sample_rate){
-    return (sample_rate % 48000 == 0) ? MCLK_48 : MCLK_441;
-}
