@@ -15,12 +15,14 @@
 #include <stages/pipeline.h>
 #include <stages/dsp_thread.h>
 #include <stages/cascaded_biquads.h>
+#include <stages/volume_control.h>
 #include <stages/dsp_thread.h>
 #include <stages/biquad.h>
 #include <stages/fork.h>
 #include <pipeline_config.h>
 #include <dsp_thread_config.h>
 #include <cascaded_biquads_config.h>
+#include <volume_control_config.h>
 #include <dsp_thread_config.h>
 #include <biquad_config.h>
 DECLARE_JOB(dsp_auto_thread0, (chanend_t*, chanend_t*, module_instance_t**));
@@ -29,10 +31,14 @@ void dsp_auto_thread0(chanend_t* c_source, chanend_t* c_dest, module_instance_t*
 	int32_t edge1[1] = {0};
 	int32_t edge2[1] = {0};
 	int32_t edge3[1] = {0};
+	int32_t edge4[1] = {0};
+	int32_t edge5[1] = {0};
 	int32_t** stage_0_output = NULL;
 	(void)stage_0_output;	int32_t** stage_1_output = NULL;
 	(void)stage_1_output;	int32_t* stage_2_input[] = {edge0, edge1};
 	int32_t* stage_2_output[] = {edge2, edge3};
+	int32_t* stage_3_input[] = {edge2, edge3};
+	int32_t* stage_3_output[] = {edge4, edge5};
 	uint32_t start_ts, end_ts, start_control_ts, control_ticks;
 	bool control_done;
 	while(1) {
@@ -53,6 +59,7 @@ void dsp_auto_thread0(chanend_t* c_source, chanend_t* c_dest, module_instance_t*
 		pipeline_control(modules[0]->state, &modules[0]->control);
 		dsp_thread_control(modules[1]->state, &modules[1]->control);
 		cascaded_biquads_control(modules[2]->state, &modules[2]->control);
+		volume_control_control(modules[3]->state, &modules[3]->control);
 		control_done = true;
 		control_ticks = get_reference_time() - start_control_ts;
 		continue; }
@@ -62,6 +69,7 @@ void dsp_auto_thread0(chanend_t* c_source, chanend_t* c_dest, module_instance_t*
 		pipeline_control(modules[0]->state, &modules[0]->control);
 		dsp_thread_control(modules[1]->state, &modules[1]->control);
 		cascaded_biquads_control(modules[2]->state, &modules[2]->control);
+		volume_control_control(modules[3]->state, &modules[3]->control);
 		control_ticks = get_reference_time() - start_control_ts;
 	}
 	start_ts = get_reference_time();
@@ -70,6 +78,10 @@ void dsp_auto_thread0(chanend_t* c_source, chanend_t* c_dest, module_instance_t*
 		stage_2_input,
 		stage_2_output,
 		modules[2]->state);
+	volume_control_process(
+		stage_3_input,
+		stage_3_output,
+		modules[3]->state);
 
 	end_ts = get_reference_time();
 	uint32_t process_plus_control_ticks = (end_ts - start_ts) + control_ticks;
@@ -77,8 +89,8 @@ void dsp_auto_thread0(chanend_t* c_source, chanend_t* c_dest, module_instance_t*
 	{
 		((dsp_thread_state_t*)(modules[1]->state))->max_cycles = process_plus_control_ticks;
 	}
-	chan_out_buf_word(c_dest[0], (void*)edge2, 1);
-	chan_out_buf_word(c_dest[0], (void*)edge3, 1);
+	chan_out_buf_word(c_dest[0], (void*)edge4, 1);
+	chan_out_buf_word(c_dest[0], (void*)edge5, 1);
 	}
 }
 DECLARE_JOB(dsp_auto_thread1, (chanend_t*, chanend_t*, module_instance_t**));
@@ -154,7 +166,7 @@ adsp_pipeline_t * adsp_auto_pipeline_init() {
 	static channel_t adsp_auto_in_chans[1];
 	static channel_t adsp_auto_out_chans[1];
 	static channel_t adsp_auto_link_chans[1];
-	static module_instance_t adsp_auto_modules[6];
+	static module_instance_t adsp_auto_modules[7];
 	static adsp_mux_elem_t adsp_auto_in_mux_cfgs[] = {
 		{ .channel_idx = 0, .data_idx = 0, .frame_size = 1},
 		{ .channel_idx = 0, .data_idx = 1, .frame_size = 1},
@@ -179,8 +191,8 @@ adsp_pipeline_t * adsp_auto_pipeline_init() {
 	adsp_auto.p_link = (channel_t *) adsp_auto_link_chans;
 	adsp_auto.n_link = 1;
 	adsp_auto.modules = adsp_auto_modules;
-	adsp_auto.n_modules = 6;
-	static pipeline_config_t config0 = { .checksum = {123, 173, 218, 148, 94, 214, 134, 247, 112, 173, 191, 132, 46, 29, 234, 230} };
+	adsp_auto.n_modules = 7;
+	static pipeline_config_t config0 = { .checksum = {191, 230, 139, 212, 99, 188, 211, 90, 97, 211, 183, 25, 198, 42, 200, 217} };
 
             static pipeline_state_t state0;
             static uint8_t memory0[_ADSP_MAX(1, PIPELINE_REQUIRED_MEMORY(0, 0, 1))];
@@ -228,10 +240,10 @@ adsp_pipeline_t * adsp_auto_pipeline_init() {
                 adsp_auto.modules[2].control.module_type = e_dsp_stage_cascaded_biquads;
                 adsp_auto.modules[2].control.num_control_commands = NUM_CMDS_CASCADED_BIQUADS;
                 cascaded_biquads_init(&adsp_auto.modules[2], &allocator2, 2, 2, 2, 1);
-	static dsp_thread_config_t config3 = {  };
+	static volume_control_config_t config3 = { .target_gain = 134217728, .slew_shift = 2, .mute = 0 };
 
-            static dsp_thread_state_t state3;
-            static uint8_t memory3[_ADSP_MAX(1, DSP_THREAD_REQUIRED_MEMORY(0, 0, 1))];
+            static volume_control_state_t state3;
+            static uint8_t memory3[_ADSP_MAX(1, VOLUME_CONTROL_REQUIRED_MEMORY(2, 2, 1))];
             static adsp_bump_allocator_t allocator3 = ADSP_BUMP_ALLOCATOR_INITIALISER(memory3);
 
             adsp_auto.modules[3].state = (void*)&state3;
@@ -241,13 +253,13 @@ adsp_pipeline_t * adsp_auto_pipeline_init() {
             adsp_auto.modules[3].control.config_rw_state = config_none_pending;
             
                 adsp_auto.modules[3].control.config = (void*)&config3;
-                adsp_auto.modules[3].control.module_type = e_dsp_stage_dsp_thread;
-                adsp_auto.modules[3].control.num_control_commands = NUM_CMDS_DSP_THREAD;
-                dsp_thread_init(&adsp_auto.modules[3], &allocator3, 3, 0, 0, 1);
-	static biquad_config_t config4 = { .left_shift = 0, .filter_coeffs = {1022611261, -1771214660, 1022611261, 1771214660, -971480698} };
+                adsp_auto.modules[3].control.module_type = e_dsp_stage_volume_control;
+                adsp_auto.modules[3].control.num_control_commands = NUM_CMDS_VOLUME_CONTROL;
+                volume_control_init(&adsp_auto.modules[3], &allocator3, 3, 2, 2, 1);
+	static dsp_thread_config_t config4 = {  };
 
-            static biquad_state_t state4;
-            static uint8_t memory4[_ADSP_MAX(1, BIQUAD_REQUIRED_MEMORY(2, 2, 1))];
+            static dsp_thread_state_t state4;
+            static uint8_t memory4[_ADSP_MAX(1, DSP_THREAD_REQUIRED_MEMORY(0, 0, 1))];
             static adsp_bump_allocator_t allocator4 = ADSP_BUMP_ALLOCATOR_INITIALISER(memory4);
 
             adsp_auto.modules[4].state = (void*)&state4;
@@ -257,12 +269,13 @@ adsp_pipeline_t * adsp_auto_pipeline_init() {
             adsp_auto.modules[4].control.config_rw_state = config_none_pending;
             
                 adsp_auto.modules[4].control.config = (void*)&config4;
-                adsp_auto.modules[4].control.module_type = e_dsp_stage_biquad;
-                adsp_auto.modules[4].control.num_control_commands = NUM_CMDS_BIQUAD;
-                biquad_init(&adsp_auto.modules[4], &allocator4, 4, 2, 2, 1);
+                adsp_auto.modules[4].control.module_type = e_dsp_stage_dsp_thread;
+                adsp_auto.modules[4].control.num_control_commands = NUM_CMDS_DSP_THREAD;
+                dsp_thread_init(&adsp_auto.modules[4], &allocator4, 4, 0, 0, 1);
+	static biquad_config_t config5 = { .left_shift = 0, .filter_coeffs = {1022611261, -1771214660, 1022611261, 1771214660, -971480698} };
 
-            static fork_state_t state5;
-            static uint8_t memory5[_ADSP_MAX(1, FORK_REQUIRED_MEMORY(2, 4, 1))];
+            static biquad_state_t state5;
+            static uint8_t memory5[_ADSP_MAX(1, BIQUAD_REQUIRED_MEMORY(2, 2, 1))];
             static adsp_bump_allocator_t allocator5 = ADSP_BUMP_ALLOCATOR_INITIALISER(memory5);
 
             adsp_auto.modules[5].state = (void*)&state5;
@@ -271,9 +284,24 @@ adsp_pipeline_t * adsp_auto_pipeline_init() {
             adsp_auto.modules[5].control.id = 5;
             adsp_auto.modules[5].control.config_rw_state = config_none_pending;
             
-                adsp_auto.modules[5].control.config = NULL;
-                adsp_auto.modules[5].control.num_control_commands = 0;
-                fork_init(&adsp_auto.modules[5], &allocator5, 5, 2, 4, 1);
+                adsp_auto.modules[5].control.config = (void*)&config5;
+                adsp_auto.modules[5].control.module_type = e_dsp_stage_biquad;
+                adsp_auto.modules[5].control.num_control_commands = NUM_CMDS_BIQUAD;
+                biquad_init(&adsp_auto.modules[5], &allocator5, 5, 2, 2, 1);
+
+            static fork_state_t state6;
+            static uint8_t memory6[_ADSP_MAX(1, FORK_REQUIRED_MEMORY(2, 4, 1))];
+            static adsp_bump_allocator_t allocator6 = ADSP_BUMP_ALLOCATOR_INITIALISER(memory6);
+
+            adsp_auto.modules[6].state = (void*)&state6;
+
+            // Control stuff
+            adsp_auto.modules[6].control.id = 6;
+            adsp_auto.modules[6].control.config_rw_state = config_none_pending;
+            
+                adsp_auto.modules[6].control.config = NULL;
+                adsp_auto.modules[6].control.num_control_commands = 0;
+                fork_init(&adsp_auto.modules[6], &allocator6, 6, 2, 4, 1);
 	return &adsp_auto;
 }
 
@@ -282,15 +310,16 @@ void adsp_auto_pipeline_main(adsp_pipeline_t* adsp) {
 		&adsp->modules[0],
 		&adsp->modules[1],
 		&adsp->modules[2],
+		&adsp->modules[3],
 	};
 	chanend_t thread_0_inputs[] = {
 		adsp->p_in[0].end_b};
 	chanend_t thread_0_outputs[] = {
 		adsp->p_link[0].end_a};
 	module_instance_t* thread_1_modules[] = {
-		&adsp->modules[3],
 		&adsp->modules[4],
 		&adsp->modules[5],
+		&adsp->modules[6],
 	};
 	chanend_t thread_1_inputs[] = {
 		adsp->p_link[0].end_b};

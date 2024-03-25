@@ -24,4 +24,4 @@ void gpio_control_task( client uart_tx_if i_uart_tx,
                         );
 #endif
 
-void set_biquad_left_shift(int32_t bp);
+void set_volume(int32_t vol);

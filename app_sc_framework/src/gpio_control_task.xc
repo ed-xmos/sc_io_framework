@@ -76,12 +76,14 @@ void gpio_control_task( client uart_tx_if i_uart_tx,
             control_input->output_gain[ch] = (int64_t)adc[ch] * (int64_t)INT_MAX / (ADC_LUT_SIZE - 1);
         }
         printf("\n");
+        int32_t volume_shift = -SIG_EXP - 10; // 10 bit ADC 
+        set_volume(adc[0] << volume_shift);
 
         
         // Read buttons
         unsigned pb = i_gpio_mc_buttons.input();
         if((pb & 0x1) == 0){ // Button 0 pressed
-            set_biquad_left_shift(adc[0]);
+            //Nothing for now
         }
 
         // Drive MC leds

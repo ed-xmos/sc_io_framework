@@ -17,23 +17,22 @@ extern adsp_pipeline_t * m_dsp;
 // See cmds.h for command IDs
 
 
-void set_biquad_left_shift(int32_t ls){
+void set_volume(int32_t vol){
 
-    ls = ls / 100;
 
-    printf("ls: %ld\n", ls);
+    printf("vol: %ld\n", vol);
 
     adsp_stage_control_cmd_t cmd;
 
-    cmd.instance_id = 2; // CASCADED_BIQUADS
-    const unsigned NUM_VALUES_CASCADED_BIQUADS_LEFT_SHIFT = 8;
+    cmd.instance_id = 3; // VOLUME
+    const unsigned NUM_VALUES_VOLUME = 1;
     const unsigned TYPE_INT32 = 4;
-    const unsigned len = NUM_VALUES_CASCADED_BIQUADS_LEFT_SHIFT * TYPE_INT32;
-    cmd.cmd_id = CMD_CASCADED_BIQUADS_LEFT_SHIFT;
+    const unsigned len = NUM_VALUES_VOLUME * TYPE_INT32;
+    cmd.cmd_id = CMD_VOLUME_CONTROL_TARGET_GAIN;
     cmd.payload_len = len;
 
-    int32_t payload_rd[NUM_VALUES_CASCADED_BIQUADS_LEFT_SHIFT] = {0};
-    int32_t payload_wr[NUM_VALUES_CASCADED_BIQUADS_LEFT_SHIFT] = {ls, ls, ls, ls, ls, ls, ls, ls};
+    int32_t payload_rd[NUM_VALUES_VOLUME] = {0};
+    int32_t payload_wr[NUM_VALUES_VOLUME] = {vol};
 
     printf("m_dsp->n_modules: %d\n", m_dsp->n_modules);
 
@@ -48,7 +47,7 @@ void set_biquad_left_shift(int32_t ls){
         printf("ADSP_CONTROL READ\n");
     }while(ret == ADSP_CONTROL_BUSY);
 
-    for(int i = 0; i < NUM_VALUES_CASCADED_BIQUADS_LEFT_SHIFT; i++){
+    for(int i = 0; i < NUM_VALUES_VOLUME; i++){
         printf("read %d: %ld\n", i, payload_rd[i]);
     }
 
