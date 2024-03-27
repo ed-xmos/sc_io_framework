@@ -141,6 +141,7 @@ int main() {
 
                 app_dsp_main_local_control();
 
+                // Thses are inlined and do not occupy a thread
                 [[distribute]]
                 uart_tx(i_uart_tx, null,
                         UART_BAUD_RATE, UART_PARITY_NONE, 8, 1,
