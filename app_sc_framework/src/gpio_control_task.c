@@ -18,9 +18,11 @@ extern adsp_pipeline_t * m_dsp;
 // See cmds.h for command IDs
 
 
+
 void set_volume(int32_t vol){
     int32_t volume_shift = -SIG_EXP - 10; // 10 bit ADC 
     vol <<= volume_shift;
+    // Need to do log conversion
 
     printf("vol: %ld\n", vol);
 
@@ -58,6 +60,7 @@ void set_volume(int32_t vol){
     ret = ADSP_CONTROL_BUSY;
     do{
         ret = adsp_write_module_config(m_dsp->modules, m_dsp->n_modules, &cmd);
+        delay_milliseconds(1);
         printf("ADSP_CONTROL WRITE\n");
     }while(ret == ADSP_CONTROL_BUSY);
 

@@ -25,3 +25,4 @@ void gpio_control_task( client uart_tx_if i_uart_tx,
 #endif
 
 void set_volume(int32_t vol);
+// Add more helpers here
