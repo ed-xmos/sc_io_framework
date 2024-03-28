@@ -59,7 +59,7 @@ void UserBufferManagement(unsigned sampsFromUsbToAudio[], unsigned sampsFromAudi
 
 
     for(int i = 0; i < NUM_USB_CHAN_OUT; i++){
-        // samples_from_host_g[i] = sampsFromUsbToAudio[i];
+        samples_from_host_g[i] = sampsFromUsbToAudio[i];
         // sampsFromUsbToAudio[i] = ((int64_t)samples_from_host_g[i] * (int64_t)output_gain_g[i]) >> 31;
     }
     chan_out_word(c_dsp_synch_end, 0);
