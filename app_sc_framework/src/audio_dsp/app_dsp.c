@@ -11,6 +11,7 @@
 
 #include <stages/adsp_pipeline.h>
 #include <stages/adsp_control.h>
+#include <control/adsp_control.h>
 #include <dsp/adsp.h>
 #include <stdint.h>
 #include "adsp_generated_auto.h"
@@ -20,6 +21,7 @@
 
 // static adsp_pipeline_t * m_dsp;
 adsp_pipeline_t * m_dsp;
+adsp_controller_t m_ctrl;
 
 static void arr_to_pointer(int32_t** pointer, int32_t* arr, int n) {
     for(int i = 0; i < n; ++i) {
@@ -45,6 +47,7 @@ void app_dsp_sink(REFERENCE_PARAM(int32_t, data)) {
 // do dsp
 void app_dsp_main_local_control(void) {
     m_dsp = adsp_auto_pipeline_init();
+    adsp_controller_init(&m_ctrl, m_dsp);
     adsp_auto_pipeline_main(m_dsp);
 }
 
@@ -57,10 +60,8 @@ static void do_write(int instance, int cmd_id, int size, void* data) {
     };
     for(;;) {
         adsp_control_status_t ret = adsp_write_module_config(
-                m_dsp->modules,
-                m_dsp->n_modules,
+                &m_ctrl,
                 &cmd);
-        xassert(ADSP_CONTROL_ERROR != ret);
         if(ADSP_CONTROL_SUCCESS == ret) {
             return;
         }
@@ -75,10 +76,8 @@ static void do_read(int instance, int cmd_id, int size, void* data) {
     };
     for(;;) {
         adsp_control_status_t ret = adsp_read_module_config(
-                m_dsp->modules,
-                m_dsp->n_modules,
+                &m_ctrl,
                 &cmd);
-        xassert(ADSP_CONTROL_ERROR != ret);
         if(ADSP_CONTROL_SUCCESS == ret) {
             return;
         }
@@ -92,11 +91,15 @@ void app_dsp_do_control(REFERENCE_PARAM(app_dsp_input_control_t, input), REFEREN
     static float pregain;
     static bool pregain_known = false;
     if(!pregain_known) {
-        do_read(reverb_stage_index, CMD_REVERB_PREGAIN, sizeof(float), &pregain);
+        do_read(reverb_stage_index, CMD_REVERB_ROOM_PREGAIN, sizeof(float), &pregain);
         pregain_known = true;
     }
-    int32_t wet_gain = adsp_reverb_calc_wet_gain(input->reverb_wet_gain, pregain);
-    do_write(reverb_stage_index, CMD_REVERB_WET_GAIN, sizeof(wet_gain), &wet_gain);
+    // calculate wet and dry gain from wet/dry ratio
+    int32_t reverb_gains[2] = {0};
+    adsp_reverb_wet_dry_mix(reverb_gains, input->reverb_wet_gain);
+
+    do_write(reverb_stage_index, CMD_REVERB_ROOM_DRY_GAIN, sizeof(reverb_gains[0]), &reverb_gains[0]);
+    do_write(reverb_stage_index, CMD_REVERB_ROOM_WET_GAIN, sizeof(reverb_gains[1]), &reverb_gains[1]);
 
     // vol
     do_write(mic_vc_stage_index, CMD_VOLUME_CONTROL_TARGET_GAIN, sizeof(int32_t), &input->mic_vol);
@@ -105,7 +108,7 @@ void app_dsp_do_control(REFERENCE_PARAM(app_dsp_input_control_t, input), REFEREN
     do_write(output_vc_stage_index, CMD_VOLUME_CONTROL_TARGET_GAIN, sizeof(int32_t), &input->output_vol);
 
     int32_t threshold = (input->denoise_enable) ? NS_THRESHOLD_LOW : NS_THRESHOLD_HIGH;
-    do_write(denoise_stage_index, CMD_NOISE_SUPPRESSOR_THRESHOLD, sizeof(int32_t), &threshold);
+    do_write(denoise_stage_index, CMD_NOISE_SUPPRESSOR_EXPANDER_THRESHOLD, sizeof(int32_t), &threshold);
 
     do_write(game_loopback_switch_ch0_stage_index, CMD_SWITCH_POSITION, sizeof(int32_t), &input->game_loopback_switch_pos);
     do_write(game_loopback_switch_ch1_stage_index, CMD_SWITCH_POSITION, sizeof(int32_t), &input->game_loopback_switch_pos);
@@ -123,8 +126,8 @@ void app_dsp_do_control(REFERENCE_PARAM(app_dsp_input_control_t, input), REFEREN
     }
 
     // mute do after to reduce blocking
-    do_write(mic_vc_stage_index, CMD_VOLUME_CONTROL_MUTE, sizeof(int8_t), &input->mic_mute);
-    do_write(music_vc_stage_index, CMD_VOLUME_CONTROL_MUTE, sizeof(int8_t), &input->music_mute);
-    do_write(monitor_vc_stage_index, CMD_VOLUME_CONTROL_MUTE, sizeof(int8_t), &input->monitor_mute);
-    do_write(output_vc_stage_index, CMD_VOLUME_CONTROL_MUTE, sizeof(int8_t), &input->output_mute);
+    do_write(mic_vc_stage_index, CMD_VOLUME_CONTROL_MUTE_STATE, sizeof(int8_t), &input->mic_mute);
+    do_write(music_vc_stage_index, CMD_VOLUME_CONTROL_MUTE_STATE, sizeof(int8_t), &input->music_mute);
+    do_write(monitor_vc_stage_index, CMD_VOLUME_CONTROL_MUTE_STATE, sizeof(int8_t), &input->monitor_mute);
+    do_write(output_vc_stage_index, CMD_VOLUME_CONTROL_MUTE_STATE, sizeof(int8_t), &input->output_mute);
 }

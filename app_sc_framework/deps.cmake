@@ -4,7 +4,7 @@ set(APP_DEPENDENT_MODULES   lib_i2c
                             lib_xassert
                             "lib_xcore_math(xcommon_cmake)"
                             lib_xua
-                            "lib_audio_dsp(v0.2.0)"
+                            "lib_audio_dsp(v1.1.0)"
                             )
 
 include(FetchContent)
@@ -13,7 +13,7 @@ if(NOT EXISTS ${XMOS_SANDBOX_DIR}/sw_usb_audio)
     FetchContent_Declare(
         sw_usb_audio
         GIT_REPOSITORY git@github.com:xmos/sw_usb_audio
-        GIT_TAG develop
+        GIT_TAG v8.1.0
         SOURCE_DIR ${XMOS_SANDBOX_DIR}/sw_usb_audio
     )
     FetchContent_Populate(sw_usb_audio)

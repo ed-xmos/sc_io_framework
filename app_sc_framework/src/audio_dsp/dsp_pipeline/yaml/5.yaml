@@ -1,15 +1,23 @@
+constants: {}
 name: volume_control
 yaml_dict:
   includes:
   - stdint.h
-  - stages/adsp_module.h
   module:
     volume_control:
       gain:
+        help: The current gain of the volume control in Q_GAIN format. This will slew
+          towards the target gain.
         type: int32_t
-      mute:
+      mute_state:
+        help: Sets the mute state. 1 is muted and 0 is unmuted.
         type: uint8_t
       slew_shift:
+        help: 'The shift value used to set the slew rate. See the volume control documentation
+          for conversions between slew_shift and time constant.
+
+          '
         type: int32_t
       target_gain:
+        help: The target gain of the volume control in Q_GAIN format.
         type: int32_t

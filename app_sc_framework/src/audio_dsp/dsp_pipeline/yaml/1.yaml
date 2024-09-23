@@ -1,8 +1,13 @@
+constants: {}
 name: dsp_thread
 yaml_dict:
-  includes:
-  - stdint.h
+  includes: []
   module:
     dsp_thread:
       max_cycles:
+        help: 'The maximum number of clock cycles consumed by a DSP thread. To avoid
+          poor audio, this must be less than the number of clock cycles available
+          to the thread.
+
+          '
         type: uint32_t

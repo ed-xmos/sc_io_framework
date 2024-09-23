@@ -77,11 +77,12 @@ void print_adc_vals(unsigned qadc[NUM_ADC_POTS]){
     }
 }
 
-// Convert QADC value into a number that can be used for wet gain.
-// scales between -20dB and 0dB for nice sounds
+// Convert QADC value into a number that can be used for wet/dry ratio.
+// scales between 0 and 1 for nice sounds
 float control_to_wet_gain(unsigned control_level) {
     int max_control_val = (1<<POT_NUM_BITS) - 1;
-    float level = -20.0 + (20 * ((float)control_level / (float)max_control_val));
+    int max_wet_dry = 1.0f;
+    float level = max_wet_dry * ((float)control_level / (float)max_control_val);
     return level;
 }
 
@@ -117,7 +118,7 @@ void gpio_control_task( client uart_tx_if i_uart_tx,
     dsp_input.monitor_mute = 0;
     dsp_input.output_vol = UNITY_VOLUME;
     dsp_input.output_mute = 0;
-    dsp_input.reverb_wet_gain = -185;
+    dsp_input.reverb_wet_gain = 0.0f;
     dsp_input.reverb_enable = 1;
     dsp_input.denoise_enable = 0;
     dsp_input.ducking_enable = 0;
