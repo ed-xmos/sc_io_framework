@@ -720,7 +720,7 @@ adsp_pipeline_t * adsp_auto_pipeline_init() {
                 adsp_auto.modules[8].control.module_type = e_dsp_stage_envelope_detector_rms;
                 adsp_auto.modules[8].control.num_control_commands = NUM_CMDS_ENVELOPE_DETECTOR_RMS;
                 envelope_detector_rms_init(&adsp_auto.modules[8], &allocator8, 8, 1, 0, 1);
-	static cascaded_biquads_config_t config9 = { .left_shift = {0, 0, 0, 0, 0, 0, 0, 0}, .filter_coeffs = {1066464016, -2127955685, 1066464016, 2127955685, -1059186208, 1059317453, -2098901827, 1059317453, 2098901827, -1044893082, 1045533663, -2013524878, 1045533663, 2013524878, -1017325503, 1020707501, -1744224590, 1020707501, 1744224590, -967673177, 986180330, -907414182, 986180330, 907414182, -898618836, 992645662, 1144878440, 992645662, -1144878440, -911549500, 1073741824, 0, 0, 0, 0, 1073741824, 0, 0, 0, 0} };
+	static cascaded_biquads_config_t config9 = { .left_shift = {0, 0, 0, 0, 0, 0, 0, 0}, .filter_coeffs = {1068516852, -2137033704, 1068516852, 2137008785, -1063316800, 1073741824, 0, 0, 0, 0, 1073741824, 0, 0, 0, 0, 1073741824, 0, 0, 0, 0, 1073741824, 0, 0, 0, 0, 1073741824, 0, 0, 0, 0, 1073741824, 0, 0, 0, 0, 1073741824, 0, 0, 0, 0} };
 
             static cascaded_biquads_state_t state9;
             static uint8_t memory9[CASCADED_BIQUADS_STAGE_REQUIRED_MEMORY(1)];
