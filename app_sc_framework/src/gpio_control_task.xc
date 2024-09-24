@@ -187,6 +187,10 @@ void gpio_control_task( client uart_tx_if i_uart_tx,
         dsp_input.game_loopback_switch_pos = button_action[0];
         dsp_input.denoise_enable = button_action[1];
         dsp_input.ducking_enable = button_action[2];
+        if((qadc[4] == 0)) // || (is_reverb_button_enable == 0))
+            dsp_input.reverb_enable = 0;
+        else
+            dsp_input.reverb_enable = 1;
 
         // Send a character to the UART from the string
         i_uart_tx.write(msg[msg_idx]);

@@ -584,7 +584,7 @@ adsp_pipeline_t * adsp_auto_pipeline_init() {
 	adsp_auto.n_link = 3;
 	adsp_auto.modules = adsp_auto_modules;
 	adsp_auto.n_modules = 35;
-	static pipeline_config_t config0 = { .checksum = {198, 124, 37, 239, 3, 8, 226, 126, 128, 118, 237, 170, 124, 247, 134, 151} };
+	static pipeline_config_t config0 = { .checksum = {165, 121, 36, 59, 23, 237, 157, 95, 87, 14, 50, 152, 45, 133, 10, 159} };
 
             static pipeline_state_t state0;
             static uint8_t memory0[PIPELINE_STAGE_REQUIRED_MEMORY];
@@ -704,7 +704,7 @@ adsp_pipeline_t * adsp_auto_pipeline_init() {
                 adsp_auto.modules[7].control.config = NULL;
                 adsp_auto.modules[7].control.num_control_commands = 0;
                 fork_init(&adsp_auto.modules[7], &allocator7, 7, 1, 3, 1);
-	static envelope_detector_rms_config_t config8 = { .attack_alpha = 1867377, .release_alpha = 622459 };
+	static envelope_detector_rms_config_t config8 = { .attack_alpha = 1789570, .release_alpha = 596523 };
 
             static envelope_detector_rms_state_t state8;
             static uint8_t memory8[ENVELOPE_DETECTOR_RMS_STAGE_REQUIRED_MEMORY(1)];
@@ -720,7 +720,7 @@ adsp_pipeline_t * adsp_auto_pipeline_init() {
                 adsp_auto.modules[8].control.module_type = e_dsp_stage_envelope_detector_rms;
                 adsp_auto.modules[8].control.num_control_commands = NUM_CMDS_ENVELOPE_DETECTOR_RMS;
                 envelope_detector_rms_init(&adsp_auto.modules[8], &allocator8, 8, 1, 0, 1);
-	static cascaded_biquads_config_t config9 = { .left_shift = {0, 0, 0, 0, 0, 0, 0, 0}, .filter_coeffs = {1066464016, -2127955685, 1066464016, 2127955685, -1059186208, 1059317453, -2098901827, 1059317453, 2098901827, -1044893082, 1045533663, -2013524878, 1045533663, 2013524878, -1017325503, 1020707501, -1744224590, 1020707501, 1744224590, -967673177, 986180330, -907414182, 986180330, 907414182, -898618836, 992645662, 1144878440, 992645662, -1144878440, -911549500, 1073741824, 0, 0, 0, 0, 1073741824, 0, 0, 0, 0} };
+	static cascaded_biquads_config_t config9 = { .left_shift = {0, 0, 0, 0, 0, 0, 0, 0}, .filter_coeffs = {1068734041, -2137468082, 1068734041, 2137445191, -1063749148, 1073741824, 0, 0, 0, 0, 1073741824, 0, 0, 0, 0, 1073741824, 0, 0, 0, 0, 1073741824, 0, 0, 0, 0, 1073741824, 0, 0, 0, 0, 1073741824, 0, 0, 0, 0, 1073741824, 0, 0, 0, 0} };
 
             static cascaded_biquads_state_t state9;
             static uint8_t memory9[CASCADED_BIQUADS_STAGE_REQUIRED_MEMORY(1)];
@@ -752,7 +752,7 @@ adsp_pipeline_t * adsp_auto_pipeline_init() {
                 adsp_auto.modules[10].control.module_type = e_dsp_stage_switch;
                 adsp_auto.modules[10].control.num_control_commands = NUM_CMDS_SWITCH;
                 switch_init(&adsp_auto.modules[10], &allocator10, 10, 2, 1, 1);
-	static noise_suppressor_expander_config_t config11 = { .attack_alpha = 18673771, .release_alpha = 778074, .threshold = 754762, .slope = -2.0 };
+	static noise_suppressor_expander_config_t config11 = { .attack_alpha = 17895697, .release_alpha = 745654, .threshold = 754762, .slope = -2.0 };
 
             static noise_suppressor_expander_state_t state11;
             static uint8_t memory11[NOISE_SUPPRESSOR_EXPANDER_STAGE_REQUIRED_MEMORY(1)];
@@ -812,10 +812,10 @@ adsp_pipeline_t * adsp_auto_pipeline_init() {
                 adsp_auto.modules[13].control.config = NULL;
                 adsp_auto.modules[13].control.num_control_commands = 0;
                 fork_init(&adsp_auto.modules[13], &allocator13, 13, 1, 2, 1);
-	static reverb_room_config_t config14 = { .sampling_freq = 46000, .max_room_size = 1.5, .room_size = 1, .feedback = 1803886264, .damping = 858993458, .wet_gain = 1913946814, .dry_gain = 1913946814, .pregain = 32212254 };
+	static reverb_room_config_t config14 = { .sampling_freq = 48000, .max_room_size = 1.5, .room_size = 1, .feedback = 1803886264, .damping = 858993458, .wet_gain = 1913946814, .dry_gain = 1913946814, .pregain = 32212254 };
 
             static reverb_room_state_t state14;
-            static uint8_t memory14[REVERB_ROOM_STAGE_REQUIRED_MEMORY(46000,1.5)];
+            static uint8_t memory14[REVERB_ROOM_STAGE_REQUIRED_MEMORY(48000,1.5)];
             static adsp_bump_allocator_t allocator14 = ADSP_BUMP_ALLOCATOR_INITIALISER(memory14);
 
             adsp_auto.modules[14].state = (void*)&state14;
@@ -874,7 +874,7 @@ adsp_pipeline_t * adsp_auto_pipeline_init() {
                 adsp_auto.modules[18].control.config = NULL;
                 adsp_auto.modules[18].control.num_control_commands = 0;
                 fork_init(&adsp_auto.modules[18], &allocator18, 18, 1, 6, 1);
-	static compressor_sidechain_config_t config19 = { .attack_alpha = 9336885, .release_alpha = 186738, .threshold = 13422, .slope = 0.4 };
+	static compressor_sidechain_config_t config19 = { .attack_alpha = 8947849, .release_alpha = 178957, .threshold = 13422, .slope = 0.4 };
 
             static compressor_sidechain_state_t state19;
             static uint8_t memory19[COMPRESSOR_SIDECHAIN_STAGE_REQUIRED_MEMORY(2)];
@@ -890,7 +890,7 @@ adsp_pipeline_t * adsp_auto_pipeline_init() {
                 adsp_auto.modules[19].control.module_type = e_dsp_stage_compressor_sidechain;
                 adsp_auto.modules[19].control.num_control_commands = NUM_CMDS_COMPRESSOR_SIDECHAIN;
                 compressor_sidechain_init(&adsp_auto.modules[19], &allocator19, 19, 2, 1, 1);
-	static compressor_sidechain_config_t config21 = { .attack_alpha = 9336885, .release_alpha = 186738, .threshold = 13422, .slope = 0.4 };
+	static compressor_sidechain_config_t config21 = { .attack_alpha = 8947849, .release_alpha = 178957, .threshold = 13422, .slope = 0.4 };
 
             static compressor_sidechain_state_t state21;
             static uint8_t memory21[COMPRESSOR_SIDECHAIN_STAGE_REQUIRED_MEMORY(2)];
@@ -1088,7 +1088,7 @@ adsp_pipeline_t * adsp_auto_pipeline_init() {
                 adsp_auto.modules[33].control.config = NULL;
                 adsp_auto.modules[33].control.num_control_commands = 0;
                 fork_init(&adsp_auto.modules[33], &allocator33, 33, 2, 4, 1);
-	static envelope_detector_rms_config_t config32 = { .attack_alpha = 1867377, .release_alpha = 622459 };
+	static envelope_detector_rms_config_t config32 = { .attack_alpha = 1789570, .release_alpha = 596523 };
 
             static envelope_detector_rms_state_t state32;
             static uint8_t memory32[ENVELOPE_DETECTOR_RMS_STAGE_REQUIRED_MEMORY(1)];

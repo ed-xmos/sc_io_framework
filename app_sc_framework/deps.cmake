@@ -4,7 +4,7 @@ set(APP_DEPENDENT_MODULES   lib_i2c
                             lib_xassert
                             "lib_xcore_math(xcommon_cmake)"
                             lib_xua
-                            "lib_audio_dsp(v0.2.0)"
+                            "lib_audio_dsp(v1.0.0)"
                             )
 
 include(FetchContent)
